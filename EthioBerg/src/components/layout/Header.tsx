@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, Bell, ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEthioApi } from "@/providers/ApiProvider";
-import { roleLabels } from "@/lib/auth/permissions";
+import { getRoleLabel } from "@/lib/auth/permissions";
 import type { AppSettings } from "@/lib/types";
 
 type HeaderProps = {
@@ -101,7 +101,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   {user?.fullName ?? "Guest"}
                 </p>
                 <p className="m-0 text-[11px] leading-tight text-[#878a99]">
-                  {user ? roleLabels[user.role] : ""}
+                  {user ? getRoleLabel(user) : ""}
                 </p>
               </div>
               <ChevronDown size={14} className="hidden text-[#878a99] sm:block" />

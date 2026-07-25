@@ -1,0 +1,10 @@
+{
+  "name": "ethioburg",
+  "private": true,
+  "scripts": {
+    "chroma": "mkdir -p .chroma && .venv/bin/chroma run --path .chroma --host 127.0.0.1 --port 8000",
+    "chroma:install": "python3 -m venv .venv && .venv/bin/pip install -U pip && .venv/bin/pip install 'chromadb>=1.0.0'",
+    "web": "npm --prefix web run dev",
+    "scraper": "go run ./cmd/scraper configs/seeds.yaml"
+  }
+}

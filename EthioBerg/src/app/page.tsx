@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import WelcomeLanding from "@/components/marketing/WelcomeLanding";
+import "./welcome.css";
 
 export default function HomePage() {
-  redirect("/dashboard");
+  return <WelcomeLanding />;
 }

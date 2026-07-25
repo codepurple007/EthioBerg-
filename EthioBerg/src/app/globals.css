@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --vz-vertical-menu-bg: #405189;
   --vz-vertical-menu-item-color: #abb9e8;

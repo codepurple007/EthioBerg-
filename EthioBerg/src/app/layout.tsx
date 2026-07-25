@@ -4,8 +4,9 @@ import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
 
 const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -21,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased ${poppins.className}`}>
+    <html lang="en" suppressHydrationWarning className={`h-full antialiased ${poppins.variable} ${poppins.className}`}>
       <body className="min-h-full">
         <AppProviders>{children}</AppProviders>
       </body>

@@ -8,7 +8,7 @@ import QuickActionsPanel from "@/components/dashboard/QuickActionsPanel";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEthioApi } from "@/providers/ApiProvider";
 import { getAuthApi } from "@/lib/api/index";
-import { roleLabels } from "@/lib/auth/permissions";
+import { getRoleLabel } from "@/lib/auth/permissions";
 import type { DashboardStats } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -44,7 +44,7 @@ export default function DashboardPage() {
         <p className="m-0 text-[13px] text-[#495057]">
           Signed in as{" "}
           <span className="font-semibold text-[#405189]">{user?.fullName}</span> (
-          {user ? roleLabels[user.role] : ""}). Use the sidebar to open listing, disclosure, and
+          {user ? getRoleLabel(user) : ""}). Use the sidebar to open listing, disclosure, and
           regulatory workflows.
         </p>
       </div>

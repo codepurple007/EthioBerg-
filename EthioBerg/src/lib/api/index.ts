@@ -10,11 +10,15 @@ import type {
   DashboardStats,
   DocumentEvaluateResponse,
   ExtractedFact,
+  GuardrailSettingsInput,
+  IngestionSettingsInput,
   IssuerDocument,
   MarketSegment,
   ReadinessEvaluateResponse,
   ReadinessFactInput,
   RegulatoryAskRequest,
+  RetrievalSettingsInput,
+  ScraperConfig,
   RequirementResult,
   RequirementState,
   RuleDefinition,
@@ -22,6 +26,7 @@ import type {
   User,
 } from "@/lib/types";
 import { mockStore } from "@/lib/api/client";
+import { mockPlatformStore } from "@/lib/api/mock-platform";
 import { mockDocumentStore } from "@/lib/api/mock-documents";
 import { askMockRegulatoryQuestion, getMockRegulatoryCorpusStats } from "@/lib/api/mock-regulatory";
 import { exploreMockCompany, resolveMockCompany } from "@/lib/api/mock-companies-explorer";
@@ -55,10 +60,11 @@ function buildMockResults(segment: MarketSegment, facts: ReadinessFactInput[]): 
 }
 
 function createMockApi(actor?: ActorRef) {
+  const actorName = () => actor?.actorName ?? "Demo Administrator";
   return {
     getDashboardStats: () => toPromise(mockStore.getDashboardStats()),
     getSources: () => toPromise(mockStore.getSources()),
-    addSource: (input: AddSourceInput, forceDuplicate = false) =>
+    addSource: (input: AddSourceInput, _file: File, forceDuplicate = false) =>
       toPromise(mockStore.addSource(input, actor!, forceDuplicate)),
     activateSource: (id: string) => toPromise(mockStore.activateSource(id, actor!)),
     retireSource: (id: string) => toPromise(mockStore.retireSource(id, actor!)),
@@ -130,6 +136,53 @@ function createMockApi(actor?: ActorRef) {
     getRegulatoryCorpusStats: () => toPromise(getMockRegulatoryCorpusStats()),
     askRegulatoryQuestion: (payload: RegulatoryAskRequest) =>
       toPromise(askMockRegulatoryQuestion(payload)),
+    getScraperConfig: () =>
+      toPromise({
+        chunkSize: 500,
+        workers: 4,
+        requestTimeoutSec: 10,
+        maxPageBytes: 31457280,
+        userAgent: "EthioBerg-WebScraper/1.0 (mock)",
+        defaultRateDelayMs: 250,
+        seeds: [{ url: "https://esx.et/", category: "esx.et" }],
+      }),
+    updateScraperConfig: (payload: ScraperConfig) => toPromise(payload),
+    getScraperStatus: () =>
+      toPromise({
+        archive: { totalChunks: 0, lastSyncDate: null, status: "IDLE" },
+        scrape: { running: false, jobId: null, pagesSynced: 0, chunksSynced: 0, logTail: "" },
+        config: { seedCount: 1, workers: 4 },
+      }),
+    getScraperDocuments: () =>
+      toPromise({
+        documents: [],
+        pagination: { page: 1, pageSize: 20, totalPages: 1, totalChunks: 0 },
+      }),
+    startScraper: () => toPromise({ ok: true, message: "Mock scrape started." }),
+    stopScraper: () => toPromise({ ok: true, message: "Mock scrape stopped." }),
+    clearScraperArchive: () => toPromise({ ok: true, message: "Mock archive cleared." }),
+    getIngestionSettings: () => toPromise(mockPlatformStore.getIngestionSettings()),
+    updateIngestionSettings: (payload: IngestionSettingsInput) =>
+      toPromise(mockPlatformStore.updateIngestionSettings(payload, actorName())),
+    getIngestionVersions: () => toPromise(mockPlatformStore.getIngestionVersions()),
+    restoreIngestionVersion: (version: number) =>
+      toPromise(mockPlatformStore.restoreIngestionVersion(version, actorName())),
+    getIngestionStats: () => toPromise(mockPlatformStore.getIngestionStats()),
+    previewChunking: (text?: string) => toPromise(mockPlatformStore.previewChunking(text)),
+    getRetrievalSettings: () => toPromise(mockPlatformStore.getRetrievalSettings()),
+    updateRetrievalSettings: (payload: RetrievalSettingsInput) =>
+      toPromise(mockPlatformStore.updateRetrievalSettings(payload, actorName())),
+    getRetrievalHealth: () => toPromise(mockPlatformStore.getRetrievalHealth()),
+    probeRetrieval: (query: string, _segment?: MarketSegment) =>
+      toPromise(mockPlatformStore.probeRetrieval(query)),
+    getQualityOverview: () => toPromise(mockPlatformStore.getQualityOverview()),
+    startQualityEvaluation: () => {
+      mockPlatformStore.runEvaluation(actorName());
+      return toPromise({ ok: true, message: "Demo evaluation completed." });
+    },
+    getQualityProgress: () => toPromise(mockPlatformStore.getQualityProgress()),
+    updateGuardrails: (payload: GuardrailSettingsInput) =>
+      toPromise(mockPlatformStore.updateGuardrails(payload, actorName())),
   };
 }
 

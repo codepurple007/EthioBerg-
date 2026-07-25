@@ -6,20 +6,34 @@ import type {
   AuditEvent,
   AuditLogFilters,
   ActorRef,
+  ChunkPreview,
   Company,
   CompanyExploreRequest,
   CompanyExploreResponse,
   CompanyResolveResponse,
   DashboardStats,
   DocumentEvaluateResponse,
+  EvaluationProgress,
   ExtractedFact,
+  GuardrailSettings,
+  GuardrailSettingsInput,
+  IngestionPipelineStats,
+  IngestionSettings,
+  IngestionSettingsInput,
   IssuerDocument,
   MarketSegment,
+  RagQualityOverview,
   ReadinessEvaluateResponse,
   ReadinessFactInput,
   RegulatoryAskRequest,
   RegulatoryAskResponse,
   RegulatoryCorpusStats,
+  RetrievalHealth,
+  RetrievalProbeResult,
+  RetrievalSettings,
+  RetrievalSettingsInput,
+  ScraperConfig,
+  ScraperStatus,
   RuleDefinition,
   SourceDocument,
 } from "@/lib/types";
@@ -101,11 +115,25 @@ export function createHttpApi(actor?: ActorRef) {
   return {
     getDashboardStats: () => request<DashboardStats>("/api/v1/dashboard/stats"),
     getSources: () => request<SourceDocument[]>("/api/v1/sources"),
-    addSource: (input: AddSourceInput, forceDuplicate = false) =>
-      request<AddSourceResult>(`/api/v1/sources?forceDuplicate=${forceDuplicate}`, {
-        method: "POST",
-        body: JSON.stringify(input),
-      }, actor),
+    addSource: (input: AddSourceInput, file: File, forceDuplicate = false) => {
+      const form = new FormData();
+      form.append("title", input.title);
+      form.append("issuingBody", input.issuingBody);
+      form.append("version", input.version);
+      form.append("publicationDate", input.publicationDate);
+      form.append("effectiveFrom", input.effectiveFrom);
+      if (input.effectiveTo) form.append("effectiveTo", input.effectiveTo);
+      form.append("language", input.language);
+      if (input.url) form.append("url", input.url);
+      form.append("checksum", input.checksum);
+      form.append("trustClass", input.trustClass);
+      form.append("file", file);
+      return requestForm<AddSourceResult>(
+        `/api/v1/sources/upload?forceDuplicate=${forceDuplicate}`,
+        form,
+        actor,
+      );
+    },
     activateSource: (id: string) =>
       request<SourceDocument>(`/api/v1/sources/${id}/activate`, { method: "PATCH" }, actor),
     retireSource: (id: string) =>
@@ -183,6 +211,64 @@ export function createHttpApi(actor?: ActorRef) {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    getScraperConfig: () => request<Record<string, unknown>>("/api/v1/scraper/config"),
+    updateScraperConfig: (payload: ScraperConfig) =>
+      request<Record<string, unknown>>("/api/v1/scraper/config", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }, actor),
+    getScraperStatus: () => request<ScraperStatus>("/api/v1/scraper/status"),
+    getScraperDocuments: (page = 1) =>
+      request<{
+        documents: Array<Record<string, string>>;
+        pagination: { page: number; pageSize: number; totalPages: number; totalChunks: number };
+      }>(`/api/v1/scraper/documents?page=${page}&pageSize=20`),
+    startScraper: () =>
+      request<{ ok: boolean; message: string }>("/api/v1/scraper/run", { method: "POST" }, actor),
+    stopScraper: () =>
+      request<{ ok: boolean; message: string }>("/api/v1/scraper/run", { method: "DELETE" }, actor),
+    clearScraperArchive: () =>
+      request<{ ok: boolean; message: string }>("/api/v1/scraper/archive", { method: "DELETE" }, actor),
+    getIngestionSettings: () => request<IngestionSettings>("/api/v1/ingestion/settings"),
+    updateIngestionSettings: (payload: IngestionSettingsInput) =>
+      request<IngestionSettings>("/api/v1/ingestion/settings", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }, actor),
+    getIngestionVersions: () => request<IngestionSettings[]>("/api/v1/ingestion/settings/versions"),
+    restoreIngestionVersion: (version: number) =>
+      request<IngestionSettings>(
+        `/api/v1/ingestion/settings/versions/${version}/restore`,
+        { method: "POST" },
+        actor,
+      ),
+    getIngestionStats: () => request<IngestionPipelineStats>("/api/v1/ingestion/stats"),
+    previewChunking: (text?: string) =>
+      request<ChunkPreview>("/api/v1/ingestion/preview", {
+        method: "POST",
+        body: JSON.stringify(text ? { text } : {}),
+      }),
+    getRetrievalSettings: () => request<RetrievalSettings>("/api/v1/retrieval/settings"),
+    updateRetrievalSettings: (payload: RetrievalSettingsInput) =>
+      request<RetrievalSettings>("/api/v1/retrieval/settings", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }, actor),
+    getRetrievalHealth: () => request<RetrievalHealth>("/api/v1/retrieval/health"),
+    probeRetrieval: (query: string, segment?: MarketSegment) =>
+      request<RetrievalProbeResult>("/api/v1/retrieval/probe", {
+        method: "POST",
+        body: JSON.stringify({ query, segment: segment ?? null }),
+      }),
+    getQualityOverview: () => request<RagQualityOverview>("/api/v1/quality/overview"),
+    startQualityEvaluation: () =>
+      request<{ ok: boolean; message: string }>("/api/v1/quality/evaluate", { method: "POST" }, actor),
+    getQualityProgress: () => request<EvaluationProgress>("/api/v1/quality/progress"),
+    updateGuardrails: (payload: GuardrailSettingsInput) =>
+      request<GuardrailSettings>("/api/v1/quality/guardrails", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }, actor),
   };
 }
 

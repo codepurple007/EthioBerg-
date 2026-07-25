@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
-import { getMenuForRole } from "@/lib/auth/permissions";
+import { getMenuForUser } from "@/lib/auth/permissions";
 import { ArrowRight, Rocket } from "lucide-react";
 
 export default function QuickActionsPanel() {
   const { user } = useAuth();
   if (!user) return null;
 
-  const actions = getMenuForRole(user.role)
+  const actions = getMenuForUser(user)
     .flatMap((section) => section.items)
     .filter((item) => item.href !== "/dashboard")
     .slice(0, 4);

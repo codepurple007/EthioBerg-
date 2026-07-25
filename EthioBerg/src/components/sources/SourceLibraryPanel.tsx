@@ -80,8 +80,8 @@ export default function SourceLibraryPanel() {
     window.setTimeout(() => setToast(null), 4000);
   }
 
-  async function handleAddSource(input: AddSourceInput, forceDuplicate: boolean) {
-    const result = await api.addSource(input, forceDuplicate);
+  async function handleAddSource(input: AddSourceInput, file: File, forceDuplicate: boolean) {
+    const result = await api.addSource(input, file, forceDuplicate);
     if (!result.ok) {
       if (result.duplicateId) {
         setDuplicateWarning(true);

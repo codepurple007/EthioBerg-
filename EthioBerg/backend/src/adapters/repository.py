@@ -77,7 +77,8 @@ class Repository:
                     checksum TEXT NOT NULL,
                     trust_class TEXT NOT NULL,
                     index_status TEXT NOT NULL,
-                    is_active INTEGER NOT NULL
+                    is_active INTEGER NOT NULL,
+                    stored_path TEXT
                 );
                 CREATE TABLE IF NOT EXISTS companies (
                     id TEXT PRIMARY KEY,
@@ -140,8 +141,59 @@ class Repository:
                     status TEXT NOT NULL,
                     FOREIGN KEY (document_id) REFERENCES issuer_documents(id)
                 );
+                CREATE TABLE IF NOT EXISTS scraper_config (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    config_json TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS scrape_jobs (
+                    id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    started_at TEXT NOT NULL,
+                    finished_at TEXT,
+                    pages_synced INTEGER NOT NULL DEFAULT 0,
+                    chunks_synced INTEGER NOT NULL DEFAULT 0,
+                    log_text TEXT NOT NULL DEFAULT ''
+                );
+                CREATE TABLE IF NOT EXISTS platform_config (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    updated_by TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS platform_config_versions (
+                    key TEXT NOT NULL,
+                    version INTEGER NOT NULL,
+                    value_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    updated_by TEXT NOT NULL,
+                    notes TEXT NOT NULL DEFAULT '',
+                    PRIMARY KEY (key, version)
+                );
+                CREATE TABLE IF NOT EXISTS eval_runs (
+                    id TEXT PRIMARY KEY,
+                    created_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS scrape_chunks (
+                    id TEXT PRIMARY KEY,
+                    job_id TEXT NOT NULL,
+                    source_url TEXT NOT NULL,
+                    title TEXT NOT NULL DEFAULT '',
+                    category TEXT NOT NULL DEFAULT '',
+                    scraped_at TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    pinecone_id TEXT,
+                    FOREIGN KEY (job_id) REFERENCES scrape_jobs(id)
+                );
                 """
             )
+            self._ensure_source_columns(conn)
+            self._seed_scraper_config(conn)
+
+    def _ensure_source_columns(self, conn: sqlite3.Connection) -> None:
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(sources)").fetchall()}
+        if "stored_path" not in columns:
+            conn.execute("ALTER TABLE sources ADD COLUMN stored_path TEXT")
 
     def _seed_if_empty(self) -> None:
         with self._connect() as conn:
@@ -322,13 +374,13 @@ class Repository:
         for row in rows:
             self.rule_engine.update_rule_review_status(row["rule_id"], ReviewStatus(row["review_status"]))
 
-    def _insert_source(self, conn: sqlite3.Connection, source: SourceDocument) -> None:
+    def _insert_source(self, conn: sqlite3.Connection, source: SourceDocument, stored_path: str | None = None) -> None:
         conn.execute(
             """
             INSERT INTO sources
             (id, title, issuing_body, version, publication_date, effective_from, effective_to,
-             language, url, checksum, trust_class, index_status, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             language, url, checksum, trust_class, index_status, is_active, stored_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 source.id,
@@ -344,6 +396,7 @@ class Repository:
                 source.trust_class,
                 source.index_status,
                 1 if source.is_active else 0,
+                stored_path,
             ),
         )
 
@@ -456,6 +509,29 @@ class Repository:
         self.log_audit(actor, "SOURCE_ADDED", "SourceDocument", source.id)
         return AddSourceResponse(ok=True, source=source)
 
+    def add_source_record(
+        self,
+        source: SourceDocument,
+        stored_path: Path,
+        actor: ActorRef,
+    ) -> SourceDocument:
+        with self._connect() as conn:
+            self._insert_source(conn, source, str(stored_path))
+        self.log_audit(actor, "SOURCE_ADDED", "SourceDocument", source.id)
+        return source
+
+    def get_source_stored_path(self, source_id: str) -> str | None:
+        with self._connect() as conn:
+            row = conn.execute("SELECT stored_path FROM sources WHERE id = ?", (source_id,)).fetchone()
+            return row["stored_path"] if row and row["stored_path"] else None
+
+    def mark_source_indexed(self, source_id: str, actor: ActorRef) -> SourceDocument | None:
+        if not self.get_source(source_id):
+            return None
+        updated = self._update_source(source_id, index_status=IndexStatus.INDEXED.value)
+        self.log_audit(actor, "SOURCE_INDEXED", "SourceDocument", source_id)
+        return updated
+
     def _update_source(self, source_id: str, **fields: Any) -> SourceDocument | None:
         if not fields:
             return self.get_source(source_id)
@@ -482,13 +558,11 @@ class Repository:
         return updated
 
     def index_source(self, source_id: str, actor: ActorRef) -> SourceDocument | None:
-        if not self.get_source(source_id):
-            return None
-        updated = self._update_source(source_id, index_status=IndexStatus.INDEXED.value)
-        self.log_audit(actor, "SOURCE_INDEXED", "SourceDocument", source_id)
-        return updated
+        """Legacy metadata-only index flag. Prefer SourceService.index_source()."""
+        return self.mark_source_indexed(source_id, actor)
 
     def run_smoke_test(self, source_id: str, actor: ActorRef) -> tuple[bool, str]:
+        """Legacy smoke test stub. Prefer SourceService.run_smoke_test()."""
         source = self.get_source(source_id)
         if not source:
             return False, "Source not found."
@@ -624,3 +698,249 @@ class Repository:
             qaSessions=0,
             registeredCompanies=len(self.get_companies()),
         )
+
+    def get_config(self, key: str) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT value_json FROM platform_config WHERE key = ?", (key,)
+            ).fetchone()
+            return json.loads(row["value_json"]) if row else None
+
+    def save_config(self, key: str, value: dict[str, Any], actor: ActorRef) -> dict[str, Any]:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO platform_config (key, value_json, updated_at, updated_by)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                    value_json = excluded.value_json,
+                    updated_at = excluded.updated_at,
+                    updated_by = excluded.updated_by
+                """,
+                (key, json.dumps(value), _now_iso(), actor.actor_name),
+            )
+        return value
+
+    def next_config_version(self, key: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT MAX(version) AS latest FROM platform_config_versions WHERE key = ?",
+                (key,),
+            ).fetchone()
+        latest = row["latest"] if row and row["latest"] is not None else 0
+        return int(latest) + 1
+
+    def save_config_version(
+        self,
+        key: str,
+        version: int,
+        value: dict[str, Any],
+        actor: ActorRef,
+        notes: str = "",
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO platform_config_versions (key, version, value_json, updated_at, updated_by, notes)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(key, version) DO UPDATE SET
+                    value_json = excluded.value_json,
+                    updated_at = excluded.updated_at,
+                    updated_by = excluded.updated_by,
+                    notes = excluded.notes
+                """,
+                (key, version, json.dumps(value), _now_iso(), actor.actor_name, notes),
+            )
+
+    def list_config_versions(self, key: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT version, value_json, updated_at, updated_by, notes
+                FROM platform_config_versions
+                WHERE key = ?
+                ORDER BY version DESC
+                """,
+                (key,),
+            ).fetchall()
+        versions: list[dict[str, Any]] = []
+        for row in rows:
+            payload = json.loads(row["value_json"])
+            payload.update(
+                {
+                    "version": int(row["version"]),
+                    "updatedAt": row["updated_at"],
+                    "updatedBy": row["updated_by"],
+                    "notes": row["notes"],
+                }
+            )
+            versions.append(payload)
+        return versions
+
+    def get_config_version(self, key: str, version: int) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT value_json FROM platform_config_versions WHERE key = ? AND version = ?",
+                (key, version),
+            ).fetchone()
+            return json.loads(row["value_json"]) if row else None
+
+    def save_eval_run(self, run_id: str, payload: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO eval_runs (id, created_at, payload_json) VALUES (?, ?, ?)",
+                (run_id, payload.get("createdAt", _now_iso()), json.dumps(payload)),
+            )
+
+    def list_eval_runs(self, limit: int = 10) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT payload_json FROM eval_runs ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [json.loads(row["payload_json"]) for row in rows]
+
+    def _seed_scraper_config(self, conn: sqlite3.Connection) -> None:
+        row = conn.execute("SELECT COUNT(*) FROM scraper_config").fetchone()
+        if row and row[0]:
+            return
+        default_path = Path(__file__).resolve().parents[2] / "config" / "scraper" / "default_seeds.yaml"
+        if default_path.exists():
+            import yaml
+
+            payload = yaml.safe_load(default_path.read_text(encoding="utf-8")) or {}
+        else:
+            payload = {"chunk_size": 500, "workers": 4, "seeds": []}
+        conn.execute(
+            "INSERT INTO scraper_config (id, config_json) VALUES (1, ?)",
+            (json.dumps(payload),),
+        )
+
+    def get_scraper_config(self, fallback: dict[str, Any]) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute("SELECT config_json FROM scraper_config WHERE id = 1").fetchone()
+            if not row:
+                return fallback
+            return json.loads(row["config_json"])
+
+    def save_scraper_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO scraper_config (id, config_json) VALUES (1, ?)
+                ON CONFLICT(id) DO UPDATE SET config_json = excluded.config_json
+                """,
+                (json.dumps(config),),
+            )
+        return config
+
+    def create_scrape_job(self, job_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO scrape_jobs (id, status, started_at, pages_synced, chunks_synced, log_text)
+                VALUES (?, 'running', ?, 0, 0, '')
+                """,
+                (job_id, _now_iso()),
+            )
+
+    def update_scrape_job(self, job_id: str, **fields: Any) -> None:
+        if not fields:
+            return
+        columns = ", ".join(f"{key} = ?" for key in fields)
+        values = list(fields.values()) + [job_id]
+        with self._connect() as conn:
+            conn.execute(f"UPDATE scrape_jobs SET {columns} WHERE id = ?", values)
+
+    def finish_scrape_job(self, job_id: str, *, status: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE scrape_jobs SET status = ?, finished_at = ? WHERE id = ?",
+                (status, _now_iso(), job_id),
+            )
+
+    def get_active_scrape_job(self) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM scrape_jobs
+                WHERE status = 'running'
+                ORDER BY started_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            return dict(row) if row else None
+
+    def save_scrape_chunks(self, records: list[dict[str, Any]]) -> None:
+        with self._connect() as conn:
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO scrape_chunks
+                (id, job_id, source_url, title, category, scraped_at, content, pinecone_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        item["id"],
+                        item["job_id"],
+                        item["source_url"],
+                        item.get("title", ""),
+                        item.get("category", ""),
+                        item["scraped_at"],
+                        item["content"],
+                        item.get("pinecone_id"),
+                    )
+                    for item in records
+                ],
+            )
+
+    def list_scrape_chunks(self, *, page: int, page_size: int) -> tuple[list[dict[str, Any]], int]:
+        offset = (page - 1) * page_size
+        with self._connect() as conn:
+            total = conn.execute("SELECT COUNT(*) FROM scrape_chunks").fetchone()[0]
+            rows = conn.execute(
+                """
+                SELECT id, source_url, title, category, scraped_at, content, pinecone_id
+                FROM scrape_chunks
+                ORDER BY scraped_at DESC, id
+                LIMIT ? OFFSET ?
+                """,
+                (page_size, offset),
+            ).fetchall()
+            return [dict(row) for row in rows], int(total)
+
+    def list_all_scrape_chunks(self) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, source_url, title, category, scraped_at, content
+                FROM scrape_chunks
+                ORDER BY scraped_at DESC, id
+                """
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_scrape_archive_stats(self) -> dict[str, Any]:
+        with self._connect() as conn:
+            total = conn.execute("SELECT COUNT(*) FROM scrape_chunks").fetchone()[0]
+            last = conn.execute("SELECT MAX(scraped_at) FROM scrape_chunks").fetchone()[0]
+        return {
+            "totalChunks": int(total),
+            "lastSyncDate": last,
+            "status": "ACTIVE" if total else "IDLE",
+        }
+
+    def clear_scrape_chunks(self) -> int:
+        with self._connect() as conn:
+            count = conn.execute("SELECT COUNT(*) FROM scrape_chunks").fetchone()[0]
+            conn.execute("DELETE FROM scrape_chunks")
+            return int(count)
+
+    def delete_scrape_chunks_by_url(self, source_url: str) -> int:
+        with self._connect() as conn:
+            count = conn.execute(
+                "SELECT COUNT(*) FROM scrape_chunks WHERE source_url = ?",
+                (source_url,),
+            ).fetchone()[0]
+            conn.execute("DELETE FROM scrape_chunks WHERE source_url = ?", (source_url,))
+            return int(count)

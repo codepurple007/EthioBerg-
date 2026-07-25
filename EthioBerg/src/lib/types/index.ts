@@ -1,15 +1,20 @@
 export type UserRole =
-  | "listing_adviser"
-  | "issuer"
-  | "compliance_officer"
-  | "investor"
+  | "investor_educator"
+  | "financial_analyst"
   | "administrator";
+
+export type AdminScope =
+  | "full_platform"
+  | "ingestion_pipeline"
+  | "search_retrieval"
+  | "ai_safety_quality";
 
 export type User = {
   id: string;
   fullName: string;
   email: string;
   role: UserRole;
+  adminScopes?: AdminScope[];
   status: "active" | "inactive";
 };
 
@@ -334,4 +339,211 @@ export type RegulatoryCorpusStats = {
   chunkCount: number;
   sourceCount: number;
   retrievalMode: string;
+};
+
+export type ScrapeSeed = {
+  url: string;
+  category: string;
+};
+
+export type ScraperConfig = {
+  chunkSize: number;
+  workers: number;
+  requestTimeoutSec: number;
+  maxPageBytes: number;
+  userAgent: string;
+  defaultRateDelayMs: number;
+  seeds: ScrapeSeed[];
+};
+
+export type ScrapeArchiveDocument = {
+  id: string;
+  source_url: string;
+  title: string;
+  category: string;
+  scraped_at: string;
+  content: string;
+};
+
+export type IngestionSettings = {
+  version: number;
+  parentChunkChars: number;
+  childChunkChars: number;
+  chunkOverlapChars: number;
+  tableAwareParsing: boolean;
+  tableFlattenStrategy: string;
+  ocrFallbackEnabled: boolean;
+  ocrLanguages: string[];
+  ocrMinTextChars: number;
+  embeddingModel: string;
+  notes: string;
+  updatedAt: string;
+  updatedBy: string;
+  isActive: boolean;
+};
+
+export type IngestionSettingsInput = Omit<
+  IngestionSettings,
+  "version" | "updatedAt" | "updatedBy" | "isActive"
+>;
+
+export type IngestionPipelineStats = {
+  totalSources: number;
+  indexedSources: number;
+  pendingSources: number;
+  retiredSources: number;
+  corpusChunks: number;
+  scrapeChunks: number;
+  lastScrapeAt: string | null;
+};
+
+export type ChunkPreviewItem = {
+  index: number;
+  role: "parent" | "child";
+  charCount: number;
+  preview: string;
+};
+
+export type ChunkPreview = {
+  parentCount: number;
+  childCount: number;
+  items: ChunkPreviewItem[];
+};
+
+export type RetrievalBackend = "auto" | "hybrid" | "pinecone";
+
+export type RetrievalSettings = {
+  retrievalBackend: RetrievalBackend;
+  topK: number;
+  candidatePool: number;
+  rrfK: number;
+  bm25Weight: number;
+  denseWeight: number;
+  articleBoost: number;
+  rerankEnabled: boolean;
+  rerankTopN: number;
+  minScore: number;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+export type RetrievalSettingsInput = Omit<RetrievalSettings, "updatedAt" | "updatedBy">;
+
+export type RetrievalComponentHealth = {
+  name: string;
+  status: "healthy" | "degraded" | "offline";
+  detail: string;
+};
+
+export type RetrievalHealth = {
+  retrievalMode: string;
+  corpusChunks: number;
+  sourceCount: number;
+  activeSources: number;
+  indexedSources: number;
+  pineconeConfigured: boolean;
+  pineconeServing: boolean;
+  components: RetrievalComponentHealth[];
+};
+
+export type RetrievalProbeHit = {
+  rank: number;
+  chunkId: string;
+  sourceTitle: string;
+  section: string;
+  fusedScore: number;
+  bm25Score: number;
+  denseScore: number;
+  articleBoost: number;
+  reranked: boolean;
+  preview: string;
+};
+
+export type RetrievalProbeResult = {
+  query: string;
+  retrievalMode: string;
+  latencyMs: number;
+  candidatesConsidered: number;
+  passedThreshold: boolean;
+  settings: RetrievalSettings;
+  hits: RetrievalProbeHit[];
+};
+
+export type GuardrailSettings = {
+  requireCitationForAnswer: boolean;
+  minCitationCount: number;
+  blockSyntheticInAnswers: boolean;
+  enforceDisclaimer: boolean;
+  abstainOnLowConfidence: boolean;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+export type GuardrailSettingsInput = Omit<GuardrailSettings, "updatedAt" | "updatedBy">;
+
+export type EvalCaseResult = {
+  caseId: string;
+  question: string;
+  expectation: "answer" | "abstain";
+  status: string;
+  passed: boolean;
+  citationCount: number;
+  expectedSourceHit: boolean;
+  verificationStatus: string;
+  latencyMs: number;
+  topChunkId: string | null;
+  failureReason: string | null;
+};
+
+export type RagQualityRun = {
+  id: string;
+  createdAt: string;
+  actorName: string;
+  retrievalMode: string;
+  totalCases: number;
+  passedCases: number;
+  answerRate: number;
+  abstentionRate: number;
+  citationCoverage: number;
+  expectedSourceRecall: number;
+  verificationPassRate: number;
+  avgLatencyMs: number;
+  results: EvalCaseResult[];
+};
+
+export type EvaluationProgress = {
+  running: boolean;
+  runId: string | null;
+  completed: number;
+  total: number;
+  startedAt: string | null;
+  message: string;
+};
+
+export type RagQualityOverview = {
+  guardrails: GuardrailSettings;
+  caseCount: number;
+  latestRun: RagQualityRun | null;
+  history: RagQualityRun[];
+  progress: EvaluationProgress;
+};
+
+export type ScraperStatus = {
+  archive: {
+    totalChunks: number;
+    lastSyncDate: string | null;
+    status: string;
+    pineconeChunks?: number;
+  };
+  scrape: {
+    running: boolean;
+    jobId: string | null;
+    pagesSynced: number;
+    chunksSynced: number;
+    logTail: string;
+  };
+  config: {
+    seedCount: number;
+    workers: number;
+  };
 };

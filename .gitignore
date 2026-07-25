@@ -17,9 +17,13 @@ __pycache__/
 .pytest_cache/
 *.db
 
+# build artifacts
+*.tsbuildinfo
+
 # misc
 .DS_Store
 *.pem
+.~lock.*#
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

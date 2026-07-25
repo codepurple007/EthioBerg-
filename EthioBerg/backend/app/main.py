@@ -1,7 +1,21 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import audit, companies, dashboard, documents, readiness, regulatory, rules, settings, sources
+from src.api.routes import (
+    audit,
+    companies,
+    dashboard,
+    documents,
+    ingestion,
+    quality,
+    readiness,
+    regulatory,
+    retrieval,
+    rules,
+    scraper,
+    settings,
+    sources,
+)
 
 app = FastAPI(
     title="EthioBerg API",
@@ -30,6 +44,10 @@ api_router.include_router(dashboard.router)
 api_router.include_router(documents.router)
 api_router.include_router(regulatory.router)
 api_router.include_router(readiness.router)
+api_router.include_router(scraper.router)
+api_router.include_router(ingestion.router)
+api_router.include_router(retrieval.router)
+api_router.include_router(quality.router)
 app.include_router(api_router)
 
 

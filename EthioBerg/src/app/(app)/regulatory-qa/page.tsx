@@ -3,7 +3,7 @@ import { RoleGuard } from "@/components/auth/RoleGuard";
 
 export default function RegulatoryQaPage() {
   return (
-    <RoleGuard permission="ask_regulatory">
+    <RoleGuard permission="ask_basic_regulatory">
       <RegulatoryQaPanel />
     </RoleGuard>
   );

@@ -22,7 +22,7 @@ type AddSourceModalProps = {
   open: boolean;
   duplicateWarning?: boolean;
   onClose: () => void;
-  onSubmit: (input: AddSourceInput, forceDuplicate: boolean) => void;
+  onSubmit: (input: AddSourceInput, file: File, forceDuplicate: boolean) => void;
 };
 
 export default function AddSourceModal({
@@ -33,12 +33,14 @@ export default function AddSourceModal({
 }: AddSourceModalProps) {
   const [form, setForm] = useState<AddSourceInput>(defaultForm);
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [hashing, setHashing] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setForm(defaultForm);
       setFileName("");
+      setSelectedFile(null);
     }
   }, [open]);
 
@@ -47,6 +49,7 @@ export default function AddSourceModal({
   async function handleFileChange(file: File | null) {
     if (!file) return;
     setFileName(file.name);
+    setSelectedFile(file);
     setHashing(true);
     try {
       const checksum = await computeFileChecksum(file);
@@ -58,8 +61,8 @@ export default function AddSourceModal({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!form.title || !form.version || !form.checksum) return;
-    onSubmit(form, duplicateWarning);
+    if (!form.title || !form.version || !form.checksum || !selectedFile) return;
+    onSubmit(form, selectedFile, duplicateWarning);
   }
 
   function updateField<K extends keyof AddSourceInput>(key: K, value: AddSourceInput[K]) {
@@ -238,7 +241,7 @@ export default function AddSourceModal({
             </button>
             <button
               type="submit"
-              disabled={!form.checksum || hashing}
+              disabled={!form.checksum || !selectedFile || hashing}
               className="cursor-pointer rounded border-0 bg-[#405189] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#364574] disabled:opacity-50"
             >
               {duplicateWarning ? "Confirm add version" : "Add source"}

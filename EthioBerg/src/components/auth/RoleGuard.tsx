@@ -31,7 +31,7 @@ export function RoleGuard({
       router.replace("/dashboard");
       return;
     }
-    if (permission && !hasPermission(user.role, permission)) {
+    if (permission && !hasPermission(user, permission)) {
       router.replace("/dashboard");
     }
   }, [user, isLoading, permission, allowedRoles, redirectTo, router]);
@@ -46,7 +46,7 @@ export function RoleGuard({
 
   if (!user) return null;
   if (allowedRoles && !allowedRoles.includes(user.role)) return null;
-  if (permission && !hasPermission(user.role, permission)) return null;
+  if (permission && !hasPermission(user, permission)) return null;
 
   return <>{children}</>;
 }

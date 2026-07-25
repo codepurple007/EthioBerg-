@@ -12,10 +12,11 @@ import {
   FileOutput,
   Settings,
   ScrollText,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { getMenuForRole } from "@/lib/auth/permissions";
+import { getMenuForUser } from "@/lib/auth/permissions";
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -27,6 +28,7 @@ const iconMap: Record<string, LucideIcon> = {
   FileOutput,
   Settings,
   ScrollText,
+  Globe,
 };
 
 type SidebarProps = {
@@ -36,7 +38,7 @@ type SidebarProps = {
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const sections = user ? getMenuForRole(user.role) : [];
+  const sections = user ? getMenuForUser(user) : [];
 
   return (
     <aside className="fixed top-0 left-0 z-40 flex h-screen w-[250px] flex-col bg-[#405189] text-white">

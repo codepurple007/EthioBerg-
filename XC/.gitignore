@@ -1,0 +1,29 @@
+# Binaries
+/bin/
+/scraper
+*.exe
+
+# Go
+/vendor/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+
+# Scraper runtime
+.runtime/
+
+# Chroma / Python env
+.venv/
+.chroma/
+
+# Next.js
+web/node_modules/
+web/.next/
+web/out/

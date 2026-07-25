@@ -40,7 +40,7 @@ export default function ReadinessWorkflow() {
 
   async function handleUploadAndExtract() {
     if (!file) {
-      setError("Select a PDF or DOCX issuer document.");
+      setError("Choose a PDF or DOCX file first, then click Upload & extract facts.");
       return;
     }
     setLoading(true);
@@ -165,23 +165,32 @@ export default function ReadinessWorkflow() {
               Accepted formats: PDF (primary) and DOCX. Files are checksum-stamped and parsed
               page-by-page before structured fact extraction.
             </p>
-            <input
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-[13px]"
-            />
-            {file && (
-              <p className="m-0 text-[12px] text-[#495057]">
-                Selected: {file.name} ({Math.round(file.size / 1024)} KB)
+            <div className="rounded border border-dashed border-[#c9ccd0] bg-[#f8f9fa] px-4 py-5">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded border-0 bg-[#405189] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#364574]">
+                <FileUp size={14} />
+                Choose PDF or DOCX
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] ?? null);
+                    setError(null);
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <p className="mb-0 mt-3 text-[12px] text-[#878a99]">
+                {file
+                  ? `Selected: ${file.name} (${Math.round(file.size / 1024)} KB)`
+                  : "No file selected yet. Use the button above to pick a document from your computer."}
               </p>
-            )}
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={loading}
+                disabled={loading || !file}
                 onClick={() => void handleUploadAndExtract()}
-                className="inline-flex cursor-pointer items-center gap-2 rounded border-0 bg-[#405189] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#364574] disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-2 rounded border-0 bg-[#405189] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#364574] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
                 Upload & extract facts

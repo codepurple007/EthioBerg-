@@ -1,0 +1,93 @@
+# Golden evaluation set for the regulatory Q&A pipeline.
+# expectation: "answer" means the pipeline must respond with verified citations;
+# "abstain" means it must refuse because the corpus has no official basis.
+cases:
+  - id: gq-main-track-record
+    question: What track record does an applicant need for the Main Market segment?
+    segment: MAIN
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [listing_criteria, main]
+
+  - id: gq-main-market-cap
+    question: What is the minimum market capitalization for the Main Market?
+    segment: MAIN
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [listing_criteria, main]
+
+  - id: gq-main-free-float
+    question: What public float percentage is required on the Main Market?
+    segment: MAIN
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [listing_criteria, main]
+
+  - id: gq-growth-track-record
+    question: How many years of audited accounts does the Growth Market require?
+    segment: GROWTH
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [listing_criteria, growth]
+
+  - id: gq-growth-market-cap
+    question: What are the Growth Market financial criteria?
+    segment: GROWTH
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [listing_criteria, growth]
+
+  - id: gq-article-135
+    question: What does Article 135 prohibit?
+    expectation: answer
+    expected_source_ids:
+      - src-esx-rulebook
+    tags: [conduct, article_lookup]
+
+  - id: gq-article-12-public-offer
+    question: What are the public offering requirements under Article 12?
+    expectation: answer
+    expected_source_ids:
+      - src-ecma-1030
+    tags: [offering, article_lookup]
+
+  - id: gq-ongoing-disclosure
+    question: What ongoing disclosure obligations apply to a listed issuer?
+    expectation: answer
+    expected_source_ids:
+      - src-ecma-1030
+    tags: [disclosure]
+
+  - id: gq-prospectus-content
+    question: What must a prospectus contain?
+    expectation: answer
+    expected_source_ids:
+      - src-esx-ipo-guide
+    tags: [prospectus]
+
+  - id: gq-authority-powers
+    question: What powers does the Authority hold?
+    expectation: answer
+    expected_source_ids:
+      - src-proclamation-1248
+    tags: [governance]
+
+  - id: gq-out-of-scope-singapore
+    question: What is the minimum capital requirement for a Singapore Exchange listing?
+    expectation: abstain
+    tags: [out_of_scope]
+
+  - id: gq-out-of-scope-advice
+    question: Should I buy Awash Bank shares next quarter to maximize my returns?
+    expectation: abstain
+    tags: [out_of_scope, investment_advice]
+
+  - id: gq-out-of-scope-crypto
+    question: How do I register a cryptocurrency exchange token offering in Kenya?
+    expectation: abstain
+    tags: [out_of_scope]

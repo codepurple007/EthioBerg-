@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
 from datetime import date
 
 from src.domain.enums import MarketSegment
@@ -16,6 +17,35 @@ class RetrievalHit:
     dense_score: float
     rrf_score: float
     article_boost: float
+    reranked: bool = False
+
+
+def _tokenize(value: str) -> set[str]:
+    return {token for token in re.findall(r"[a-z0-9]+", value.lower()) if len(token) > 2}
+
+
+def rerank_hits(query: str, hits: list[RetrievalHit], top_n: int) -> list[RetrievalHit]:
+    """Rescore the top candidates by query-term coverage over chunk text and section.
+
+    Acts as a lightweight stand-in for a cross-encoder: it reads the full candidate
+    text rather than relying on the bag-of-words ranking signals alone.
+    """
+    query_terms = _tokenize(query)
+    if not query_terms or not hits:
+        return hits
+
+    head, tail = hits[:top_n], hits[top_n:]
+    rescored: list[RetrievalHit] = []
+    for hit in head:
+        text_terms = _tokenize(hit.chunk.text)
+        section_terms = _tokenize(hit.chunk.section)
+        coverage = len(query_terms & text_terms) / len(query_terms)
+        section_match = len(query_terms & section_terms) / len(query_terms)
+        adjusted = hit.rrf_score * (1.0 + 0.6 * coverage + 0.4 * section_match)
+        rescored.append(replace(hit, rrf_score=adjusted, reranked=True))
+
+    rescored.sort(key=lambda hit: hit.rrf_score, reverse=True)
+    return rescored + tail
 
 
 class HybridRetriever:
@@ -51,9 +81,17 @@ class HybridRetriever:
         language: str | None = None,
         as_of: date | None = None,
         top_k: int = 5,
+        rrf_k: int | None = None,
+        bm25_weight: float = 1.0,
+        dense_weight: float = 1.0,
+        article_boost_weight: float = 0.5,
+        candidate_pool: int | None = None,
+        rerank_enabled: bool = False,
+        rerank_top_n: int = 10,
     ) -> list[RetrievalHit]:
         evaluation_date = as_of or date.today()
         article_ref = extract_article_reference(query)
+        fusion_k = rrf_k if rrf_k is not None else self.rrf_k
 
         bm25_scores = self.bm25.score(query)
         dense_scores = self.dense.score(query)
@@ -80,13 +118,13 @@ class HybridRetriever:
 
             rrf = 0.0
             if idx in bm25_rank:
-                rrf += 1.0 / (self.rrf_k + bm25_rank[idx])
+                rrf += bm25_weight / (fusion_k + bm25_rank[idx])
             if idx in dense_rank:
-                rrf += 1.0 / (self.rrf_k + dense_rank[idx])
+                rrf += dense_weight / (fusion_k + dense_rank[idx])
 
             article_boost = 0.0
             if article_ref and article_ref in chunk.section.lower():
-                article_boost = 0.5
+                article_boost = article_boost_weight
                 rrf += article_boost
 
             if rrf <= 0:
@@ -103,4 +141,8 @@ class HybridRetriever:
             )
 
         hits.sort(key=lambda hit: hit.rrf_score, reverse=True)
+        if candidate_pool:
+            hits = hits[:candidate_pool]
+        if rerank_enabled:
+            hits = rerank_hits(query, hits, rerank_top_n)
         return hits[:top_k]

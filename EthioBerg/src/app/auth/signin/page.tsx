@@ -4,14 +4,14 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthShell from "@/components/auth/AuthShell";
 import { useAuth } from "@/providers/AuthProvider";
-import { demoUsers } from "@/lib/mock/seed-data";
-import { roleLabels } from "@/lib/auth/permissions";
+import { demoPasswords, demoUsers } from "@/lib/mock/seed-data";
+import { getRoleLabel } from "@/lib/auth/permissions";
 
 export default function SignInPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("adviser@ethioberg.et");
-  const [password, setPassword] = useState("Adviser@123");
+  const [email, setEmail] = useState("analyst@ethioberg.et");
+  const [password, setPassword] = useState("Analyst@123");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -96,21 +96,11 @@ export default function SignInPage() {
                   type="button"
                   onClick={() => {
                     setEmail(user.email);
-                    setPassword(
-                      user.role === "listing_adviser"
-                        ? "Adviser@123"
-                        : user.role === "issuer"
-                          ? "Issuer@12345"
-                          : user.role === "compliance_officer"
-                            ? "Compliance@123"
-                            : user.role === "investor"
-                              ? "Investor@123"
-                              : "Admin@12345",
-                    );
+                    setPassword(demoPasswords[user.email] ?? "");
                   }}
                   className="w-full cursor-pointer rounded border border-[#e9ebec] bg-[#f8f9fa] px-3 py-2 text-left text-[12px] text-[#495057] hover:border-[#405189]"
                 >
-                  <span className="font-medium">{roleLabels[user.role]}</span>
+                  <span className="font-medium">{getRoleLabel(user)}</span>
                   <span className="block text-[#878a99]">{user.email}</span>
                 </button>
               </li>
