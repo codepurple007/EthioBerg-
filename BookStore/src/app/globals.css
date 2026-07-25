@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+:root {
+  --vz-vertical-menu-bg: #405189;
+  --vz-vertical-menu-item-color: #abb9e8;
+  --vz-vertical-menu-item-hover: #ffffff;
+  --vz-vertical-menu-item-active: #ffffff;
+  --vz-vertical-menu-title: #838fb9;
+  --vz-header-bg: #ffffff;
+  --vz-body-bg: #f3f3f9;
+  --vz-card-bg: #ffffff;
+  --vz-primary: #405189;
+  --vz-secondary: #3577f1;
+  --vz-success: #0ab39c;
+  --vz-info: #299cdb;
+  --vz-warning: #f7b84b;
+  --vz-danger: #f06548;
+  --vz-dark: #212529;
+  --vz-muted: #878a99;
+  --vz-border: #e9ebec;
+  --vz-heading: #495057;
+  --vz-link: #405189;
+  --vz-soft-warning: #fef4e4;
+  --vz-soft-success: #daf4f0;
+  --vz-soft-danger: #fde8e4;
+  --vz-soft-info: #e1f0fa;
+  --vz-soft-primary: #e2e5ed;
+}
+
+@theme inline {
+  --color-vz-menu: var(--vz-vertical-menu-bg);
+  --color-vz-menu-item: var(--vz-vertical-menu-item-color);
+  --color-vz-body: var(--vz-body-bg);
+  --color-vz-card: var(--vz-card-bg);
+  --color-vz-primary: var(--vz-primary);
+  --color-vz-secondary: var(--vz-secondary);
+  --color-vz-success: var(--vz-success);
+  --color-vz-info: var(--vz-info);
+  --color-vz-warning: var(--vz-warning);
+  --color-vz-danger: var(--vz-danger);
+  --color-vz-muted: var(--vz-muted);
+  --color-vz-border: var(--vz-border);
+  --color-vz-heading: var(--vz-heading);
+  --font-sans: "Poppins", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--vz-body-bg);
+  color: var(--vz-heading);
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.card {
+  background: var(--vz-card-bg);
+  border: 1px solid var(--vz-border);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 2px rgba(56, 65, 74, 0.15);
+}
+
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--vz-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vz-heading);
+  margin: 0;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.badge-hot {
+  background: var(--vz-danger);
+  color: #fff;
+  font-size: 0.625rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  margin-left: 0.35rem;
+  text-transform: uppercase;
+}
+
+.badge-new {
+  background: var(--vz-success);
+  color: #fff;
+  font-size: 0.625rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  margin-left: 0.35rem;
+  text-transform: uppercase;
+}
+
+.map-marker {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    r: 4;
+  }
+  50% {
+    opacity: 0.6;
+    r: 6;
+  }
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}

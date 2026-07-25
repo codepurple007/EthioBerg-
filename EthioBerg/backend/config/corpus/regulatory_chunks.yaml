@@ -1,0 +1,174 @@
+chunks:
+  - chunk_id: ecma-1030-art-1
+    source_id: src-ecma-1030
+    source_title: ECMA Directive on Public Offering and Trading of Securities No. 1030/2024
+    section: Article 1 — Purpose
+    page: 3
+    segment: null
+    language: en
+    effective_from: "2024-07-01"
+    effective_to: null
+    text: >
+      This Directive establishes requirements for public offerings and trading of securities
+      in Ethiopia and assigns ongoing disclosure duties to issuers whose securities are offered
+      to the public or admitted to trading.
+
+  - chunk_id: ecma-1030-art-12-public-offer
+    source_id: src-ecma-1030
+    source_title: ECMA Directive on Public Offering and Trading of Securities No. 1030/2024
+    section: Article 12 — Public offering requirements
+    page: 14
+    segment: null
+    language: en
+    effective_from: "2024-07-01"
+    effective_to: null
+    text: >
+      No person shall offer securities to the public unless the securities are registered with
+      the Authority and the issuer has filed a prospectus meeting the content requirements
+      prescribed by the Authority.
+
+  - chunk_id: ecma-1030-art-18-disclosure
+    source_id: src-ecma-1030
+    source_title: ECMA Directive on Public Offering and Trading of Securities No. 1030/2024
+    section: Article 18 — Ongoing disclosure
+    page: 22
+    segment: null
+    language: en
+    effective_from: "2024-07-01"
+    effective_to: null
+    text: >
+      An issuer whose securities are offered to the public or admitted to trading on a trading
+      venue shall publish semi-annual reports and disclose material information affecting the
+      price of its securities within twenty-four hours of the information becoming available.
+
+  - chunk_id: esx-rulebook-main-track-record
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Main Market listing criteria, track record
+    page: 112
+    segment: MAIN
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      An applicant for listing on the Main Market must demonstrate an operating track record of
+      at least three years in its principal business activity.
+
+  - chunk_id: esx-rulebook-main-market-cap
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Main Market listing criteria, market capitalization
+    page: 113
+    segment: MAIN
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      The expected market capitalization of the applicant at the time of listing on the Main Market
+      shall be not less than ETB 500 million.
+
+  - chunk_id: esx-rulebook-main-free-float
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Main Market public float requirement
+    page: 114
+    segment: MAIN
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      At least fifteen percent of the applicant's issued shares representing the public float
+      shall be offered to the public or otherwise held by public shareholders at listing.
+
+  - chunk_id: esx-rulebook-growth-track-record
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Growth Market listing criteria, track record
+    page: 128
+    segment: GROWTH
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      An applicant for listing on the Growth Market must demonstrate an operating track record of
+      at least two years.
+
+  - chunk_id: esx-rulebook-growth-market-cap
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Growth Market financial criteria
+    page: 129
+    segment: GROWTH
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      The expected market capitalization of a Growth Market applicant shall be not less than
+      ETB 100 million at admission.
+
+  - chunk_id: esx-rulebook-growth-free-float
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Volume C — Growth Market public float
+    page: 130
+    segment: GROWTH
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      Growth Market applicants must maintain a minimum public free float of ten percent, subject
+      to verification against the effective rulebook provision rather than informal web summaries.
+
+  - chunk_id: esx-rulebook-art-135-insider
+    source_id: src-esx-rulebook
+    source_title: ESX Rulebook (Effective Version)
+    section: Article 135 — Insider dealing prohibition
+    page: 201
+    segment: null
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      Article 135 prohibits a person who possesses inside information from dealing in relevant
+      securities, recommending another person to deal, or disclosing the information except
+      in the normal course of employment or profession.
+
+  - chunk_id: esx-ipo-guide-prospectus
+    source_id: src-esx-ipo-guide
+    source_title: ESX IPO and Listing Guide
+    section: Chapter 4 — Prospectus content
+    page: 18
+    segment: null
+    language: en
+    effective_from: "2025-01-01"
+    effective_to: null
+    text: >
+      The prospectus must describe the issuer's business model, use of proceeds, risk factors,
+      capital structure, dividend policy, and audited financial statements for the minimum
+      historical period required for the selected market segment.
+
+  - chunk_id: proclamation-1248-authority
+    source_id: src-proclamation-1248
+    source_title: Capital Market Proclamation No. 1248/2021
+    section: Article 5 — Powers of the Authority
+    page: 8
+    segment: null
+    language: en
+    effective_from: "2021-05-01"
+    effective_to: null
+    text: >
+      The Ethiopian Capital Market Authority shall regulate securities offerings, market conduct,
+      licensing of market intermediaries, and disclosure by issuers of securities in Ethiopia.
+
+  - chunk_id: ecma-faq-ongoing-am
+    source_id: src-ecma-1030
+    source_title: ECMA Issuer and Ongoing-Disclosure Guidance
+    section: FAQ — Ongoing reporting (Amharic summary)
+    page: 2
+    segment: null
+    language: am
+    effective_from: "2024-07-01"
+    effective_to: null
+    text: >
+      ያልተሰናየ የዋጋ መረጃ በ24 ሰዓት ውስጥ መገለጽ አለበት። ይህ ግዴታ ለህዝብ የቀረቡ ወይም በብሔራዊ መድረክ
+      ላይ የሚ торгዱ ድርሆች ላይ ይተገብራል።

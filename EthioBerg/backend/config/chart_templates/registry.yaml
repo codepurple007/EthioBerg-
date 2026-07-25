@@ -1,0 +1,13 @@
+templates:
+  PRICE_VOLUME_V1:
+    title: Price and volume
+    min_series: 2
+    allowed_statuses: [SYNTHETIC_DEMO, OFFICIAL]
+  FINANCIAL_TREND_V1:
+    title: Financial trend
+    min_periods: 2
+    allowed_statuses: [ISSUER_REPORTED, OFFICIAL]
+  READINESS_CATEGORY_V1:
+    title: Readiness by category
+    min_periods: 1
+    allowed_statuses: [ISSUER_REPORTED, USER_SUPPLIED, OFFICIAL]

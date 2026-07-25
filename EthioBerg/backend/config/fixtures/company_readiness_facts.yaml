@@ -1,0 +1,61 @@
+companies:
+  c1:
+    facts:
+      - field: track_record_years
+        value: 28
+      - field: market_cap_etb
+        value: 6200000000
+      - field: free_float_pct
+        value: 18
+      - field: shareholder_count
+        value: 2450
+      - field: profit_latest_etb
+        value: 11600000000
+  c2:
+    facts:
+      - field: track_record_years
+        value: 26
+      - field: market_cap_etb
+        value: 5400000000
+      - field: free_float_pct
+        value: 16
+      - field: shareholder_count
+        value: 1980
+      - field: profit_latest_etb
+        value: 9000000000
+  c3:
+    facts:
+      - field: track_record_years
+        value: 30
+      - field: market_cap_etb
+        value: 7100000000
+      - field: free_float_pct
+        value: 17
+      - field: shareholder_count
+        value: 2210
+      - field: profit_latest_etb
+        value: 10500000000
+  c4:
+    facts:
+      - field: track_record_years
+        value: 25
+      - field: market_cap_etb
+        value: 4100000000
+      - field: free_float_pct
+        value: 14
+      - field: shareholder_count
+        value: 980
+      - field: profit_latest_etb
+        value: 6900000000
+  c5:
+    facts:
+      - field: track_record_years
+        value: 130
+      - field: market_cap_etb
+        value: 98000000000
+      - field: free_float_pct
+        value: 20
+      - field: shareholder_count
+        value: 12500
+      - field: profit_latest_etb
+        value: 21100000000

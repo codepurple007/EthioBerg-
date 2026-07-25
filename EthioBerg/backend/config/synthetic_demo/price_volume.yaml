@@ -1,0 +1,16 @@
+fixtures:
+  AWASH:
+    fixture_id: syn-price-v1-awash
+    seed: 12001
+  BOA:
+    fixture_id: syn-price-v1-boa
+    seed: 12002
+  DASHEN:
+    fixture_id: syn-price-v1-dashen
+    seed: 12003
+  WEGAGEN:
+    fixture_id: syn-price-v1-wegagen
+    seed: 12004
+  ET:
+    fixture_id: syn-price-v1-et
+    seed: 12005

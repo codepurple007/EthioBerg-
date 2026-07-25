@@ -1,0 +1,1517 @@
+﻿SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+BookStore Management System
+Version: 1.0
+Date: July 15, 2026
+Prepared For: [Client Name]
+Prepared By: [Development Team]
+
+
+TABLE OF CONTENTS
+Introduction
+
+
+Overall Description
+
+
+Functional Requirements
+
+
+Non-Functional Requirements
+
+
+System Architecture
+
+
+Database Design
+
+
+API Design
+
+
+UI/UX Requirements
+
+
+Security Requirements
+
+
+Offline Mode Strategy
+
+
+Hardware Integration
+
+
+Reporting & Export
+
+
+Currency & Tax Configuration
+
+
+In Scope / Out of Scope
+
+
+Constraints & Assumptions
+
+
+Glossary
+
+
+Appendix
+
+
+1. INTRODUCTION
+1.1 Purpose
+The purpose of this Software Requirements Specification (SRS) document is to provide a detailed description of the BookStore Management System. This system is designed to manage the day-to-day operations of a physical bookstore, including:
+
+
+Book catalog management
+
+
+Inventory tracking with real-time updates
+
+
+In-store sales processing
+
+
+Customer management
+
+
+Supplier management
+
+
+Discount and promotion management
+
+
+Sales reporting and analytics
+
+
+User role-based access control
+
+
+Multi-language support (English, Amharic, Afaan Oromo)
+
+
+Offline capability for uninterrupted operations
+
+
+1.2 Scope
+The BookStore Management System is a web-based application designed specifically for brick-and-mortar bookstores. It enables:
+
+
+Customers to browse available books and check stock availability via in-store kiosks or their own devices.
+
+
+Cashiers to process sales, manage customer registrations, and handle transactions (cash/mobile banking).
+
+
+Store Admins to manage inventory, create discounts, view reports, and oversee store operations.
+
+
+Super Admins to manage users, view audit logs, and configure system settings.
+
+
+Suppliers to view their supplied books, stock levels, and reorder suggestions.
+
+
+The system integrates with thermal receipt printers and supports offline operations for up to 1 day.
+
+
+1.3 Definitions, Acronyms, and Abbreviations
+Term        Definition
+SRS        Software Requirements Specification
+RBAC        Role-Based Access Control
+CRUD        Create, Read, Update, Delete
+UI        User Interface
+UX        User Experience
+API        Application Programming Interface
+JWT        JSON Web Token
+ETB        Ethiopian Birr
+USD        United States Dollar
+PO        Purchase Order
+VAT        Value Added Tax
+POS        Point of Sale
+PWA        Progressive Web Application
+1.4 References
+Document/Resource        Source
+Next.js Documentation        https://nextjs.org/docs
+Supabase Documentation        https://supabase.com/docs
+Golang Documentation        https://go.dev/doc/
+REST API Design Guidelines        https://restfulapi.net/
+2. OVERALL DESCRIPTION
+2.1 User Roles and Characteristics
+2.1.1 Customer/Guest
+Description: Individuals who visit the store (physically or via the web portal) to browse books.
+
+
+Capabilities:
+
+
+Browse and search books
+
+
+View book details (title, author, genre, price, availability)
+
+
+Check stock availability
+
+
+View active discounts/promotions
+
+
+Switch between languages (English, Amharic, Afaan Oromo)
+
+
+Registration: Not required for browsing. Customers can be registered by cashiers for purchase tracking.
+
+
+2.1.2 Cashier/Sales Staff
+Description: Store staff responsible for processing in-store sales.
+
+
+Capabilities:
+
+
+Search and view books
+
+
+Create and process sales transactions
+
+
+Register new customers (optional during checkout)
+
+
+Process payments (cash/mobile banking with receipt upload)
+
+
+Print receipts (thermal printer)
+
+
+View low stock alerts
+
+
+View their own sales history
+
+
+Update inventory quantities during checkout (auto-update)
+
+
+Restrictions: Cannot add/edit/delete books, manage users, or view full reports.
+
+
+2.1.3 Store Admin/Manager
+Description: Store manager responsible for overall store operations.
+
+
+Capabilities:
+
+
+All Cashier capabilities
+
+
+Add/Edit/Delete books (CRUD)
+
+
+Manage genres (Add/Edit/Delete)
+
+
+Manage inventory (stock updates, view low stock alerts)
+
+
+Manage suppliers (contact info, reorder suggestions)
+
+
+Create/manage discounts (categorical or specific)
+
+
+View sales reports & analytics (daily, weekly, monthly)
+
+
+View top-selling and least-selling books
+
+
+View sales by genre/category
+
+
+View staff performance metrics
+
+
+Export reports (PDF, Excel, CSV)
+
+
+View recent activity logs
+
+
+Restrictions: Cannot manage users or view full audit logs.
+
+
+2.1.4 Supplier/Vendor
+Description: Book suppliers who provide books to the store.
+
+
+Capabilities:
+
+
+View their own contact information (can update phone/email)
+
+
+View books they supply with current stock levels
+
+
+View reorder suggestions (auto-calculated)
+
+
+View purchase order history
+
+
+Receive notifications for new orders
+
+
+Restrictions: Limited to their own data only.
+
+
+2.1.5 Super Admin
+Description: System administrator with full system control.
+
+
+Capabilities:
+
+
+All Store Admin capabilities
+
+
+Manage all user accounts (create, edit, delete, assign roles)
+
+
+View full audit logs (all system activities)
+
+
+Configure system settings (languages, tax rates, currency, store info)
+
+
+Manage backup/restore operations
+
+
+Full access to all data and reports
+
+
+Restrictions: None.
+
+
+2.2 System Features Summary
+Feature        Customer        Cashier        Store Admin        Supplier        Super Admin
+Browse/Search Books        ✅        ✅        ✅        ✅        ✅
+View Book Details        ✅        ✅        ✅        ✅        ✅
+Check Book Availability        ✅        ✅        ✅        ✅        ✅
+View Active Discounts        ✅        ✅        ✅        ✅        ✅
+Create Sale        ❌        ✅        ✅        ❌        ✅
+View Own Sales History        ❌        ✅        ✅        ❌        ✅
+View All Sales (Store-wide)        ❌        ❌        ✅        ❌        ✅
+Add/Edit/Delete Books        ❌        ❌        ✅        ❌        ✅
+Manage Genres        ❌        ❌        ✅        ❌        ✅
+Update Inventory Stock        ❌        ✅        ✅        ❌        ✅
+View Low Stock Alerts        ❌        ✅        ✅        ✅        ✅
+Manage Suppliers        ❌        ❌        ✅        ❌        ✅
+View/Edit Own Supplier Info        ❌        ❌        ❌        ✅        ❌
+View Reorder Suggestions        ❌        ❌        ✅        ✅        ✅
+Create Purchase Orders        ❌        ❌        ✅        ❌        ✅
+Manage Discounts        ❌        ❌        ✅        ❌        ✅
+View Sales Reports        ❌        ❌        ✅        ❌        ✅
+Export Reports (PDF/Excel/CSV)        ❌        ❌        ✅        ❌        ✅
+Manage User Accounts        ❌        ❌        ❌        ❌        ✅
+View Audit Logs        ❌        ❌        ❌        ❌        ✅
+Configure System Settings        ❌        ❌        ❌        ❌        ✅
+Register New Customers        ❌        ✅        ✅        ❌        ✅
+View Customer Purchase History        ❌        ❌        ✅        ❌        ✅
+Print Receipts        ❌        ✅        ✅        ❌        ✅
+2.3 User Characteristics
+Role        Technical Skill Level        Frequency of Use        Concurrent Users
+Customer        Low (general public)        Sporadic        Up to 50
+Cashier        Medium        Daily (throughout day)        5-10
+Store Admin        Medium-High        Daily        1-2
+Supplier        Low-Medium        Weekly        1-5
+Super Admin        High        Weekly        1
+2.4 Operating Environment
+Component        Technology
+Frontend Framework        Next.js (React)
+Backend Framework        Golang (REST API)
+Database        Supabase (PostgreSQL)
+Authentication        Supabase Auth (JWT-based)
+Hosting        Vercel (Frontend) / Cloud Run (Backend)
+Storage        Supabase Storage (Receipts, exports)
+Offline Storage        IndexedDB (Browser)
+Thermal Printer        ESC/POS compatible (e.g., Epson, Star)
+Language Support        English, Amharic, Afaan Oromo
+Currency Support        ETB, USD
+2.5 Design Constraints
+Mobile-First Design: The UI must be fully responsive and work seamlessly on smartphones, tablets, and desktops.
+
+
+Multi-Language: All UI text must be available in English, Amharic, and Afaan Oromo. Book data must be stored in all 3 languages.
+
+
+Offline Capability: The system must function fully offline for up to 1 day.
+
+
+Real-Time Updates: Inventory must update in real-time as sales occur.
+
+
+No External Dependencies: No dependency on third-party payment gateways or accounting software.
+
+
+Browser Compatibility: Must work on Chrome, Firefox, Safari, and Edge (latest 2 versions).
+
+
+2.6 Assumptions and Dependencies
+Assumptions
+The store has a stable internet connection for normal operations (with offline fallback).
+
+
+Cashiers have access to a device (desktop/tablet) with a browser for the POS interface.
+
+
+Thermal receipt printers are ESC/POS compatible.
+
+
+Customers can access the book catalog via in-store kiosks or personal devices.
+
+
+Staff have basic computer literacy.
+
+
+The store has a barcode system? (No - books are searched manually by title/author/ISBN)
+
+
+Dependencies
+Supabase: Requires active subscription for database and storage.
+
+
+Vercel/Cloud Run: Requires hosting services.
+
+
+Thermal Printer Drivers: Must be installed on POS devices.
+
+
+Browser Offline Storage: Must support IndexedDB (modern browsers).
+
+
+Internet Connection: Required for syncing offline data (when back online).
+
+
+3. FUNCTIONAL REQUIREMENTS
+3.1 Book Management Module
+FR-01: Book Catalog Management
+Description: The system shall allow Store Admins and Super Admins to manage the book catalog.
+
+
+Functional Requirements:
+
+
+FR-01.1: The system shall allow adding a new book with the following fields:
+
+
+Title (English, Amharic, Afaan Oromo)
+
+
+Author
+
+
+ISBN (International Standard Book Number)
+
+
+Publisher
+
+
+Publication Year
+
+
+Genre/Category (multi-select or single)
+
+
+Description (English, Amharic, Afaan Oromo)
+
+
+Price (ETB)
+
+
+Cost Price (ETB)
+
+
+Quantity (stock)
+
+
+Reorder Level (minimum stock threshold)
+
+
+Supplier (select from supplier list)
+
+
+Book Cover Image (optional)
+
+
+Language of Book (original language)
+
+
+Pages
+
+
+Dimensions (optional)
+
+
+FR-01.2: The system shall allow editing all book fields.
+
+
+FR-01.3: The system shall allow soft-deleting books (mark as inactive, not physically removed from database).
+
+
+FR-01.4: The system shall validate ISBN format (13-digit standard).
+
+
+FR-01.5: The system shall prevent duplicate ISBN entries.
+
+
+FR-01.6: The system shall auto-generate a unique Book ID (e.g., B001, B002).
+
+
+Use Case: Add New Book
+
+
+Step        Actor        Action
+1        Store Admin        Navigates to "Books" → "Add New Book"
+2        Store Admin        Fills in all required fields (Title, Author, ISBN, Price, etc.)
+3        Store Admin        Selects Genre and Supplier from dropdowns
+4        Store Admin        Uploads book cover image (optional)
+5        Store Admin        Clicks "Save"
+6        System        Validates all fields
+7        System        Generates unique Book ID
+8        System        Saves book to database
+9        System        Displays success message
+10        System        Logs action to audit trail
+FR-02: Book Search & Filtering
+Description: All users shall be able to search and filter books.
+
+
+Functional Requirements:
+
+
+FR-02.1: The system shall provide a global search bar that searches across:
+
+
+Title (all languages)
+
+
+Author
+
+
+ISBN
+
+
+Publisher
+
+
+FR-02.2: The system shall support filtering by:
+
+
+Genre/Category
+
+
+Availability (In Stock / Out of Stock)
+
+
+Price Range (Min-Max)
+
+
+Publication Year
+
+
+Publisher
+
+
+Language
+
+
+FR-02.3: Search results shall display:
+
+
+Book thumbnail (cover image)
+
+
+Title (in user's selected language)
+
+
+Author
+
+
+Price (ETB)
+
+
+Availability status (In Stock / Out of Stock)
+
+
+Genre
+
+
+FR-02.4: The system shall support full-text search with relevance ranking.
+
+
+FR-02.5: Search results shall be paginated (20 books per page).
+
+
+FR-02.6: The system shall support "fuzzy search" for misspelled titles/author names.
+
+
+Use Case: Search Books
+
+
+Step        Actor        Action
+1        User        Types search query in search bar
+2        System        Performs full-text search across indexed fields
+3        System        Displays matching results with relevance ranking
+4        User        Applies filters (genre, price, availability)
+5        System        Refines results based on filters
+6        User        Clicks on a book to view details
+FR-03: Genre Management
+Description: The system shall allow Store Admins and Super Admins to manage book genres.
+
+
+Functional Requirements:
+
+
+FR-03.1: The system shall allow adding a new genre with:
+
+
+Name (English, Amharic, Afaan Oromo)
+
+
+Description (optional, in all 3 languages)
+
+
+FR-03.2: The system shall allow editing genre names and descriptions.
+
+
+FR-03.3: The system shall allow soft-deleting genres (cannot delete if books are assigned).
+
+
+FR-03.4: The system shall display genres in a hierarchical/tree structure if needed.
+
+
+FR-03.5: The system shall show the number of books assigned to each genre.
+
+
+Use Case: Manage Genres
+
+
+Step        Actor        Action
+1        Store Admin        Navigates to "Settings" → "Genres"
+2        Store Admin        Views list of existing genres
+3        Store Admin        Clicks "Add New Genre"
+4        Store Admin        Enters name in all 3 languages
+5        Store Admin        Clicks "Save"
+6        System        Adds new genre to database
+7        System        Genre becomes available for book assignment
+3.2 Inventory Management Module
+FR-04: Stock Management
+Description: The system shall track and manage book inventory in real-time.
+
+
+Functional Requirements:
+
+
+FR-04.1: The system shall maintain current stock quantity for each book.
+
+
+FR-04.2: The system shall auto-update stock when:
+
+
+A sale is processed (quantity decreases)
+
+
+A return/exchange is processed (quantity increases)
+
+
+A purchase order is received (quantity increases)
+
+
+An admin manually adjusts stock (with reason)
+
+
+FR-04.3: The system shall maintain stock adjustment history (who, when, what, why).
+
+
+FR-04.4: The system shall set a reorder level (minimum stock threshold) for each book.
+
+
+FR-04.5: The system shall generate alerts when stock falls below reorder level.
+
+
+FR-04.6: The system shall show "Low Stock" badges on book listings.
+
+
+FR-04.7: The system shall show "Out of Stock" status when quantity = 0.
+
+
+FR-04.8: The system shall prevent sales of books with 0 quantity (inventory check during checkout).
+
+
+Use Case: Process Sale (Inventory Update)
+
+
+Step        Actor        Action
+1        Cashier        Creates a new sale
+2        Cashier        Adds books to the sale
+3        Cashier        Completes checkout
+4        System        Decreases stock for each sold book
+5        System        Checks if any book is below reorder level
+6        System        Generates low stock alert if needed
+7        System        Logs inventory adjustment
+FR-05: Stock Alerts & Notifications
+Description: The system shall notify relevant users about stock-related events.
+
+
+Functional Requirements:
+
+
+FR-05.1: The system shall display low stock alerts on the dashboard for:
+
+
+Cashiers
+
+
+Store Admins
+
+
+Super Admins
+
+
+Suppliers (for books they supply)
+
+
+FR-05.2: The system shall send email notifications for:
+
+
+Low stock alerts (to Store Admin)
+
+
+Reorder suggestions (to Store Admin and Supplier)
+
+
+New purchase orders (to Supplier)
+
+
+FR-05.3: The system shall auto-generate reorder suggestions based on:
+
+
+Current stock levels
+
+
+Reorder levels
+
+
+Sales velocity (if available)
+
+
+FR-05.4: The system shall allow Store Admin to manually trigger reorder suggestions.
+
+
+FR-05.5: The system shall display stock alerts in real-time on the dashboard.
+
+
+FR-06: Purchase Order Management (Basic)
+Description: The system shall allow Store Admins to create and track purchase orders with suppliers.
+
+
+Functional Requirements:
+
+
+FR-06.1: The system shall allow creating a purchase order (PO) with:
+
+
+PO Number (auto-generated)
+
+
+Supplier (selected from supplier list)
+
+
+Order Date
+
+
+Expected Delivery Date
+
+
+Items (book, quantity, cost price)
+
+
+Total Amount
+
+
+Status (Draft, Sent, Received, Cancelled)
+
+
+FR-06.2: The system shall allow editing POs before they are sent.
+
+
+FR-06.3: The system shall allow updating PO status to "Received" when books arrive.
+
+
+FR-06.4: When PO status changes to "Received":
+
+
+Inventory automatically increases for each book
+
+
+Cost price updates (if changed)
+
+
+FR-06.5: The system shall allow exporting PO as PDF.
+
+
+FR-06.6: The system shall maintain PO history for each supplier.
+
+
+Use Case: Create Purchase Order
+
+
+Step        Actor        Action
+1        Store Admin        Navigates to "Purchases" → "New PO"
+2        Store Admin        Selects Supplier
+3        Store Admin        Searches and adds books (with quantity)
+4        System        Calculates total amount
+5        Store Admin        Sets expected delivery date
+6        Store Admin        Clicks "Save" (Draft) or "Send to Supplier"
+7        System        Generates PO Number
+8        System        Sends email notification to supplier (if sent)
+9        System        Saves PO to database
+3.3 Sales Management Module
+FR-07: In-Store Sales Processing
+Description: The system shall allow cashiers to process in-store sales efficiently.
+
+
+Functional Requirements:
+
+
+FR-07.1: The system shall provide a "New Sale" button to start a sales session.
+
+
+FR-07.2: The system shall allow adding books to the sale via:
+
+
+Search by title/author/ISBN
+
+
+Scanning? (No barcode scanning) - Manual search only
+
+
+FR-07.3: The sales screen shall display:
+
+
+Sale number (auto-generated)
+
+
+List of items with quantities and subtotals
+
+
+Running total
+
+
+Discounts applied (if any)
+
+
+Tax amount
+
+
+Grand total
+
+
+FR-07.4: The system shall allow adjusting quantities for each book.
+
+
+FR-07.5: The system shall allow removing items from the sale.
+
+
+FR-07.6: The system shall allow applying discounts to the entire sale or specific items.
+
+
+FR-07.7: The system shall support customer registration during checkout (optional):
+
+
+Name
+
+
+Phone Number
+
+
+Email (optional)
+
+
+FR-07.8: The system shall support "Guest Customer" if customer declines registration.
+
+
+FR-07.9: The system shall support payment methods:
+
+
+Cash
+
+
+Mobile Banking (requires receipt screenshot upload)
+
+
+FR-07.10: For Mobile Banking:
+
+
+Cashier MUST upload a receipt screenshot
+
+
+Field: Receipt Image (mandatory)
+
+
+Field: Transaction Reference Number (optional)
+
+
+FR-07.11: The system shall display change due (for cash payments).
+
+
+FR-07.12: The system shall generate and print a receipt (thermal printer) after successful payment.
+
+
+FR-07.13: The system shall allow reprinting receipts (for returns/exchanges).
+
+
+FR-07.14: The system shall support PDF receipt export (in addition to thermal print).
+
+
+FR-07.15: The system shall record:
+
+
+Sale date/time
+
+
+Cashier name
+
+
+Customer (registered or guest)
+
+
+Items sold
+
+
+Payment method
+
+
+Total amount
+
+
+Discounts applied
+
+
+Tax amount
+
+
+Use Case: Process Sale
+
+
+Step        Actor        Action
+1        Cashier        Clicks "New Sale"
+2        Cashier        Searches for books and adds to sale
+3        Cashier        Adjusts quantities as needed
+4        Cashier        Applies any active discount (optional)
+5        Cashier        Clicks "Checkout"
+6        Cashier        Selects payment method (Cash/Mobile)
+7        Cashier        If Mobile Banking: Uploads receipt screenshot
+8        Cashier        Confirms amount and processes payment
+9        System        Validates inventory (sufficient stock)
+10        System        Deducts stock for each item
+11        System        Creates sale record
+12        System        Generates sale receipt
+13        System        Prints receipt (thermal)
+14        System        Displays success message
+15        System        Logs transaction to audit trail
+FR-08: Returns & Exchanges
+Description: The system shall process customer returns and exchanges.
+
+
+Functional Requirements:
+
+
+FR-08.1: The system shall allow processing a return by:
+
+
+Searching for the original sale (by receipt number or customer)
+
+
+Selecting items to return
+
+
+FR-08.2: The system shall validate returns:
+
+
+Only items from the original sale can be returned
+
+
+Quantity cannot exceed original quantity
+
+
+Returns within return period (configurable, e.g., 7 days)
+
+
+FR-08.3: The system shall support exchange:
+
+
+Customer returns item(s) and selects replacement book(s)
+
+
+System calculates price difference (refund/additional payment)
+
+
+FR-08.4: On return:
+
+
+Inventory increases (returned books)
+
+
+Sale record is updated with return flag
+
+
+Customer gets refund (recorded in system)
+
+
+FR-08.5: On exchange:
+
+
+Inventory increases for returned items
+
+
+Inventory decreases for exchanged items
+
+
+System records exchange transaction
+
+
+FR-08.6: The system shall generate return/exchange receipt.
+
+
+FR-08.7: The system shall require manager approval for returns/exchanges (optional - can be configured).
+
+
+Use Case: Process Return
+
+
+Step        Actor        Action
+1        Cashier        Searches original sale (by receipt number)
+2        Cashier        Selects items to return
+3        Cashier        Selects reason for return
+4        Cashier        Clicks "Process Return"
+5        System        Validates return period and quantities
+6        System        Increases inventory for returned items
+7        System        Updates sale record
+8        System        Generates return receipt
+9        System        Prints return receipt
+10        System        Logs action to audit trail
+3.4 Customer Management Module
+FR-09: Customer Registration
+Description: The system shall allow customers to be registered in the system (optional).
+
+
+Functional Requirements:
+
+
+FR-09.1: The system shall allow cashiers to register customers in-store.
+
+
+FR-09.2: Customer registration fields:
+
+
+First Name (required)
+
+
+Last Name (required)
+
+
+Phone Number (required)
+
+
+Email (optional)
+
+
+Address (optional)
+
+
+FR-09.3: The system shall allow existing customers to be searched by:
+
+
+Name
+
+
+Phone Number
+
+
+FR-09.4: The system shall link sales to customers (if registered).
+
+
+FR-09.5: The system shall display customer purchase history (for Store Admin/Super Admin).
+
+
+Use Case: Register Customer
+
+
+Step        Actor        Action
+1        Cashier        During checkout, clicks "Register Customer"
+2        Cashier        Enters customer details (name, phone, email)
+3        Cashier        Clicks "Save"
+4        System        Creates customer record
+5        System        Links current sale to customer
+6        System        Displays success message
+3.5 Supplier Management Module
+FR-10: Supplier Management
+Description: The system shall manage supplier information.
+
+
+Functional Requirements:
+
+
+FR-10.1: The system shall allow adding a new supplier with:
+
+
+Supplier Name (required)
+
+
+Contact Person
+
+
+Phone Number (required)
+
+
+Email (required)
+
+
+Address
+
+
+Notes (optional)
+
+
+Status (Active/Inactive)
+
+
+FR-10.2: The system shall allow editing supplier details.
+
+
+FR-10.3: The system shall allow soft-deleting suppliers.
+
+
+FR-10.4: The system shall link suppliers to books.
+
+
+FR-10.5: The system shall display books supplied by each supplier.
+
+
+FR-10.6: The system shall generate reorder suggestions per supplier.
+
+
+FR-10.7: The system shall track purchase order history per supplier.
+
+
+3.6 Discount & Promotion Module
+FR-11: Discount Management
+Description: The system shall allow Store Admins to create and manage discounts.
+
+
+Functional Requirements:
+
+
+FR-11.1: The system shall allow creating discounts with:
+
+
+Discount Name (required)
+
+
+Discount Type: Percentage (%) or Fixed Amount (ETB)
+
+
+Discount Value (required)
+
+
+Applicable To: All Books, Specific Genre(s), Specific Book(s)
+
+
+Start Date/Time
+
+
+End Date/Time (optional; if not set, permanent until removed)
+
+
+Status: Active/Inactive
+
+
+FR-11.2: The system shall allow editing discounts.
+
+
+FR-11.3: The system shall allow deactivating/reactivating discounts.
+
+
+FR-11.4: The system shall automatically apply active discounts during checkout.
+
+
+FR-11.5: The system shall display active discounts on:
+
+
+Customer dashboard (banner/notification)
+
+
+Book detail pages (discount badge)
+
+
+Cashier checkout screen (auto-applied)
+
+
+FR-11.6: The system shall show discounted price alongside original price.
+
+
+FR-11.7: The system shall log discount application in sale records.
+
+
+Use Case: Create Discount
+
+
+Step        Actor        Action
+1        Store Admin        Navigates to "Promotions" → "New Discount"
+2        Store Admin        Enters discount name and value
+3        Store Admin        Selects type (Percentage/Fixed)
+4        Store Admin        Selects applicability (All/Genre/Specific Books)
+5        Store Admin        Sets start date (and end date if needed)
+6        Store Admin        Clicks "Save"
+7        System        Activates discount
+8        System        Displays discount on customer portal
+9        System        Logs action to audit trail
+3.7 Reporting & Analytics Module
+FR-12: Sales Reports
+Description: The system shall provide comprehensive sales reports.
+
+
+Functional Requirements:
+
+
+FR-12.1: The system shall generate reports by:
+
+
+Daily Sales
+
+
+Weekly Sales
+
+
+Monthly Sales
+
+
+Custom Date Range
+
+
+FR-12.2: Each sales report shall include:
+
+
+Total Revenue (ETB)
+
+
+Number of Transactions
+
+
+Total Items Sold
+
+
+Average Transaction Value
+
+
+Payment Method Breakdown (Cash vs. Mobile Banking)
+
+
+Tax Collected
+
+
+FR-12.3: The system shall show sales trends (charts/graphs).
+
+
+FR-12.4: The system shall allow exporting reports as:
+
+
+PDF
+
+
+Excel (.xlsx)
+
+
+CSV
+
+
+FR-12.5: The system shall generate "Top Selling Books" report:
+
+
+Top 10 bestsellers (by quantity)
+
+
+Top 10 by revenue
+
+
+FR-12.6: The system shall generate "Least Selling Books" report.
+
+
+FR-12.7: The system shall generate "Sales by Genre" report.
+
+
+FR-12.8: The system shall generate "Staff Performance" report:
+
+
+Sales per cashier
+
+
+Number of transactions per cashier
+
+
+Use Case: Generate Daily Sales Report
+
+
+Step        Actor        Action
+1        Store Admin        Navigates to "Reports" → "Sales Reports"
+2        Store Admin        Selects "Daily" and chooses date
+3        Store Admin        Clicks "Generate Report"
+4        System        Queries sales data for selected date
+5        System        Displays report with charts and tables
+6        Store Admin        Clicks "Export" → selects format (PDF/Excel/CSV)
+7        System        Generates and downloads file
+FR-13: Inventory Reports
+Description: The system shall provide inventory-related reports.
+
+
+Functional Requirements:
+
+
+FR-13.1: The system shall generate:
+
+
+Current Inventory List (all books with quantities)
+
+
+Low Stock Report
+
+
+Out of Stock Report
+
+
+Inventory Valuation Report (cost price × quantity)
+
+
+FR-13.2: The system shall allow exporting inventory reports as:
+
+
+PDF
+
+
+Excel (.xlsx)
+
+
+CSV
+
+
+3.8 User Management Module
+FR-14: User Management
+Description: The system shall allow Super Admins to manage all users.
+
+
+Functional Requirements:
+
+
+FR-14.1: The system shall allow creating users with:
+
+
+Full Name (required)
+
+
+Email (required, unique)
+
+
+Phone Number (required)
+
+
+Role (Cashier, Store Admin, Supplier, Super Admin)
+
+
+Status (Active/Inactive)
+
+
+FR-14.2: The system shall allow editing user details.
+
+
+FR-14.3: The system shall allow deactivating/reactivating users.
+
+
+FR-14.4: The system shall allow deleting users (soft-delete).
+
+
+FR-14.5: The system shall send email notifications for:
+
+
+New user account creation (with login credentials)
+
+
+Password reset requests
+
+
+FR-14.6: The system shall enforce strong passwords:
+
+
+Minimum 8 characters
+
+
+At least one uppercase, one lowercase, one number, one special character
+
+
+FR-14.7: The system shall support session timeout after inactivity (configurable, default: 30 minutes).
+
+
+3.9 Multi-Language Module
+FR-15: Language Support
+Description: The system shall support English, Amharic, and Afaan Oromo.
+
+
+Functional Requirements:
+
+
+FR-15.1: The system shall allow users to switch languages via a dropdown in the UI.
+
+
+FR-15.2: The system shall store book details in all 3 languages:
+
+
+Title
+
+
+Description
+
+
+Genre Names
+
+
+FR-15.3: The system shall display UI text (labels, buttons, menus) in the user's selected language.
+
+
+FR-15.4: The system shall display book titles/descriptions in the user's selected language (fallback to English if translation missing).
+
+
+FR-15.5: The system shall support right-to-left (RTL) layout for Amharic (if needed).
+
+
+FR-15.6: The system shall store language preference per user session.
+
+
+3.10 Audit Trail Module
+FR-16: Audit Logging
+Description: The system shall log all critical actions for traceability.
+
+
+Functional Requirements:
+
+
+FR-16.1: The system shall log the following actions:
+
+
+User login/logout
+
+
+Book creation, update, deletion
+
+
+Genre creation, update, deletion
+
+
+Sale creation and processing
+
+
+Return/exchange processing
+
+
+Discount creation, update, deletion
+
+
+Inventory adjustments
+
+
+User creation, update, deletion
+
+
+Price changes
+
+
+System configuration changes
+
+
+Purchase order creation, update, deletion
+
+
+FR-16.2: Each log entry shall include:
+
+
+Timestamp
+
+
+User ID
+
+
+Action Type
+
+
+Details (what was changed, old value, new value)
+
+
+IP Address
+
+
+Session ID
+
+
+FR-16.3: The system shall allow Super Admins to view and search audit logs.
+
+
+FR-16.4: The system shall retain audit logs for a configurable period (default: 1 year).
+
+
+FR-16.5: The system shall allow exporting audit logs as CSV.
+
+
+3.11 System Configuration Module
+FR-17: System Settings
+Description: The system shall allow Super Admins to configure system settings.
+
+
+Functional Requirements:
+
+
+FR-17.1: The system shall allow configuring:
+
+
+Store Name
+
+
+Store Address
+
+
+Store Phone Number
+
+
+Store Email
+
+
+Currency (ETB, USD, both)
+
+
+Tax Rate (configurable, e.g., 15%)
+
+
+Tax Included in Price? (Yes/No)
+
+
+Return Period (days)
+
+
+Session Timeout (minutes)
+
+
+Language (default language)
+
+
+Receipt Header/Footer Text (customizable)

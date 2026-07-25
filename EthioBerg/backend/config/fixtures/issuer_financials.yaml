@@ -1,0 +1,71 @@
+companies:
+  c1:
+    fixture_id: fix-fin-awash-v1
+    source_id: src-esx-listed
+    citation: Awash Bank S.C. — labelled issuer fixture for demo education only
+    periods:
+      - period: FY2023
+        revenue_etb_m: 28.4
+        net_profit_etb_m: 9.1
+      - period: FY2024
+        revenue_etb_m: 31.2
+        net_profit_etb_m: 10.4
+      - period: FY2025
+        revenue_etb_m: 34.8
+        net_profit_etb_m: 11.6
+  c2:
+    fixture_id: fix-fin-boa-v1
+    source_id: src-esx-listed
+    citation: Bank of Abyssinia S.C. — labelled issuer fixture for demo education only
+    periods:
+      - period: FY2023
+        revenue_etb_m: 22.1
+        net_profit_etb_m: 7.4
+      - period: FY2024
+        revenue_etb_m: 24.6
+        net_profit_etb_m: 8.2
+      - period: FY2025
+        revenue_etb_m: 27.3
+        net_profit_etb_m: 9.0
+  c3:
+    fixture_id: fix-fin-dashen-v1
+    source_id: src-esx-listed
+    citation: Dashen Bank S.C. — labelled issuer fixture for demo education only
+    periods:
+      - period: FY2023
+        revenue_etb_m: 26.8
+        net_profit_etb_m: 8.9
+      - period: FY2024
+        revenue_etb_m: 29.5
+        net_profit_etb_m: 9.7
+      - period: FY2025
+        revenue_etb_m: 32.1
+        net_profit_etb_m: 10.5
+  c4:
+    fixture_id: fix-fin-wegagen-v1
+    source_id: src-esx-listed
+    citation: Wegagen Bank S.C. — labelled issuer fixture for demo education only
+    periods:
+      - period: FY2023
+        revenue_etb_m: 18.4
+        net_profit_etb_m: 5.8
+      - period: FY2024
+        revenue_etb_m: 19.9
+        net_profit_etb_m: 6.3
+      - period: FY2025
+        revenue_etb_m: 21.5
+        net_profit_etb_m: 6.9
+  c5:
+    fixture_id: fix-fin-et-v1
+    source_id: src-esx-listed
+    citation: Ethio Telecom S.C. — labelled issuer fixture for demo education only
+    periods:
+      - period: FY2023
+        revenue_etb_m: 92.5
+        net_profit_etb_m: 18.2
+      - period: FY2024
+        revenue_etb_m: 98.1
+        net_profit_etb_m: 19.6
+      - period: FY2025
+        revenue_etb_m: 104.7
+        net_profit_etb_m: 21.1

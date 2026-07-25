@@ -1,0 +1,45 @@
+rules:
+  - rule_id: ESX_GROWTH_TRACK_RECORD
+    name: Minimum operating track record (Growth)
+    segment: GROWTH
+    field: track_record_years
+    operator: GTE
+    threshold: 2
+    unit: years
+    effective_from: "2025-01-01"
+    effective_to: null
+    source_document_id: src-esx-rulebook
+    source_section: Volume C, Growth Market listing criteria
+    review_status: APPROVED
+    unknown_result: MISSING_EVIDENCE
+    category: Track record
+
+  - rule_id: ESX_GROWTH_FREE_FLOAT
+    name: Minimum free float (Growth)
+    segment: GROWTH
+    field: free_float_pct
+    operator: GTE
+    threshold: 10
+    unit: percent
+    effective_from: "2025-01-01"
+    effective_to: null
+    source_document_id: src-esx-rulebook
+    source_section: Volume C, Growth Market public float
+    review_status: DRAFT
+    unknown_result: MISSING_EVIDENCE
+    category: Shareholder structure
+
+  - rule_id: ESX_GROWTH_MARKET_CAP
+    name: Minimum market capitalization (Growth)
+    segment: GROWTH
+    field: market_cap_etb
+    operator: GTE
+    threshold: 100000000
+    unit: ETB
+    effective_from: "2025-01-01"
+    effective_to: null
+    source_document_id: src-esx-rulebook
+    source_section: Volume C, Growth Market financial criteria
+    review_status: APPROVED
+    unknown_result: MISSING_EVIDENCE
+    category: Financial thresholds
