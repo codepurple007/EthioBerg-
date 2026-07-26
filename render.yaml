@@ -1,12 +1,24 @@
 # Render Blueprint for EthioBerg.
 #
-# Two services: the FastAPI backend and the Next.js frontend. The backend keeps
-# all state in SQLite plus uploaded files, so it has a persistent disk mounted at
-# /var/data; without it every deploy would reset sources, ingestion settings,
-# evaluation runs, and the audit log.
+# Two services: the FastAPI backend and the Next.js frontend.
 #
-# Services with a disk cannot scale beyond one instance and do not get
-# zero-downtime deploys. That is expected here, since SQLite has a single writer.
+# Both run on free instances, which need no payment method. The trade-off is that
+# free instances cannot mount a persistent disk and they stop after 15 minutes of
+# inactivity, so the backend restarts from a clean filesystem. Everything SQLite
+# holds — the source library, ingestion setting versions, evaluation history, the
+# audit log, and uploaded documents — resets to its seeded state on each restart.
+# The regulatory corpus ships in the image and the Pinecone index lives outside
+# Render, so question answering is unaffected.
+#
+# To make that state durable, upgrade ethioberg-api to a paid instance and attach
+# a disk at /var/data. ETHIOBERG_DATA_DIR already points there, so no code or
+# configuration changes are needed:
+#
+#     plan: starter
+#     disk:
+#       name: ethioberg-data
+#       mountPath: /var/data
+#       sizeGB: 1
 
 services:
   - type: web
@@ -15,19 +27,16 @@ services:
     # binary, and the native runtime cannot install system packages. Build and start
     # commands come from EthioBerg/backend/Dockerfile.
     runtime: docker
-    plan: starter # a disk requires a paid instance type
+    plan: free
     region: oregon
     rootDir: EthioBerg/backend
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
-    disk:
-      name: ethioberg-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       # The Python version is pinned by the Dockerfile's base image, so PYTHON_VERSION
       # does not apply here.
-      # Moves the SQLite database, uploads, and stored sources onto the disk.
+      # Keeps the database, uploads, and stored sources in one place. Ephemeral on a
+      # free instance; attaching a disk at this path later makes it durable.
       - key: ETHIOBERG_DATA_DIR
         value: /var/data
       # The frontend calls this API from the browser, so its public origin must be
@@ -47,7 +56,7 @@ services:
   - type: web
     name: ethioberg-web
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     rootDir: EthioBerg
     # NEXT_PUBLIC_* values are inlined into the client bundle at build time, so the

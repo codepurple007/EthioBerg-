@@ -20,19 +20,42 @@ with English and Amharic language data, so there is no build or start command to
    leave it blank unless you want the hosted vector index (see below).
 4. Apply. The backend builds first because the frontend reads its hostname.
 
-Both services are on the `starter` plan. The backend needs a paid instance because it has
-a persistent disk attached; free instances cannot mount one.
+Both services run on free instances, which require no payment method.
 
-## Why the backend has a disk
+## What the free tier costs you
 
-All backend state is on the filesystem: the SQLite database, uploaded issuer documents,
-and stored source files. Render's filesystem is otherwise wiped on every deploy, which
-would reset the source library, ingestion setting versions, evaluation history, and the
-audit log.
+Free instances stop after 15 minutes without traffic and take roughly a minute to wake, so
+load the site before a demo rather than letting the first visitor pay that cost. A
+workspace also gets 750 instance-hours per month across all free services; two services
+that sleep when idle stay well inside that, but two running continuously would not.
 
-The disk mounts at `/var/data` and `ETHIOBERG_DATA_DIR` points the application there. A
-service with a disk runs a single instance and does not get zero-downtime deploys — both
-expected, since SQLite allows only one writer.
+More importantly, **free instances cannot mount a persistent disk**, and a service that
+sleeps restarts from a clean filesystem. Everything in SQLite therefore resets to its
+seeded state whenever the backend wakes up:
+
+- the source library returns to its 3 seeded entries
+- ingestion setting versions, evaluation run history, and the audit log are cleared
+- uploaded issuer documents are deleted
+
+Question answering is unaffected. The regulatory corpus ships inside the image, and the
+Pinecone index lives outside Render entirely.
+
+## Making state durable
+
+Upgrade `ethioberg-api` to a paid instance and attach a disk at `/var/data`:
+
+```yaml
+plan: starter
+disk:
+  name: ethioberg-data
+  mountPath: /var/data
+  sizeGB: 1
+```
+
+`ETHIOBERG_DATA_DIR` already points at `/var/data`, so nothing else changes — the database,
+uploads, and stored sources land on the disk automatically. At current pricing this is
+$7/month for the instance plus $0.25/month for 1 GB. Note that a service with a disk runs a
+single instance and gives up zero-downtime deploys, which suits SQLite's single writer.
 
 ## Environment variables
 
@@ -110,7 +133,10 @@ ignored, because passing an uninstalled code makes Tesseract fail the whole page
 For local OCR, install the binary directly (`sudo apt install tesseract-ocr
 tesseract-ocr-amh`). Without it the app still runs; OCR simply reports itself unavailable.
 
-## Cold starts
+## Verifying a deploy
 
-Starter instances sleep after inactivity and take roughly a minute to wake. Load the site
-before a demo so the first request is not the slow one.
+1. `https://ethioberg-api.onrender.com/health` returns OK.
+2. **Admin → Ingestion** reports the Tesseract version and languages. A warning there means
+   the Docker image did not build as expected and OCR is unavailable.
+3. **Admin → Retrieval Operations** shows which backend is serving and how many chunks it
+   can see.
