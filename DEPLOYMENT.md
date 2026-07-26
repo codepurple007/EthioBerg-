@@ -67,14 +67,25 @@ regex already allows for that.
 
 ## Retrieval backend
 
-Retrieval defaults to the in-process hybrid retriever (BM25 + TF-IDF with reciprocal rank
-fusion). It needs no external service, answers in milliseconds, and correctly refuses
-out-of-scope questions.
+Retrieval defaults to `auto`, which picks a backend based on whether Pinecone is
+configured:
 
-Pinecone is optional and selectable per environment under **Admin → Retrieval Operations**.
-It indexes far more content, but each query takes several seconds, and because it scores
-unrelated questions nearly as highly as valid ones, the pipeline's abstention behaviour is
-weaker. Set `PINECONE_API_KEY` and switch the backend there if you want it.
+- *`PINECONE_API_KEY` set* — the hosted Pinecone index serves queries. It covers far more
+  content (~1,100 indexed chunks), but each query takes several seconds, and because it
+  scores unrelated questions nearly as highly as valid ones, the pipeline abstains less
+  reliably on out-of-scope questions.
+- *`PINECONE_API_KEY` blank* — the in-process hybrid retriever serves queries (BM25 +
+  TF-IDF with reciprocal rank fusion). It answers in milliseconds and refuses out-of-scope
+  questions correctly, but only sees the 13 chunks committed in
+  `backend/config/corpus/regulatory_chunks.yaml`.
+
+An administrator can override this per environment under **Admin → Retrieval Operations**
+by choosing `hybrid` or `pinecone` explicitly. That choice is stored in the database, so it
+persists across deploys and takes precedence over the default above.
+
+Because the setting is stored, an environment that has been changed once will not pick up a
+change to the default. Check the current value on the Retrieval Operations page rather than
+inferring it from the code.
 
 ## Cold starts
 

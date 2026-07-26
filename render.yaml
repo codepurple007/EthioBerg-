@@ -34,8 +34,9 @@ services:
       # allowed. Matched by pattern to avoid a circular service reference.
       - key: CORS_ALLOW_ORIGIN_REGEX
         value: ^https://ethioberg-web(-[a-z0-9]+)?\.onrender\.com$
-      # Optional. Only needed to serve retrieval from the hosted vector index;
-      # the default in-process retriever works without it.
+      # Retrieval defaults to "auto": the hosted vector index serves queries when
+      # this key is present, and the in-process retriever takes over when it is
+      # blank. Leave it empty to deploy without Pinecone.
       - key: PINECONE_API_KEY
         sync: false
       - key: PINECONE_INDEX_NAME
