@@ -545,9 +545,13 @@ export type ScraperStatus = {
   };
   scrape: {
     running: boolean;
+    /** "idle" before any run, then the last job's state: running, completed, stopped, failed. */
+    status: string;
     jobId: string | null;
     pagesSynced: number;
     chunksSynced: number;
+    startedAt: string | null;
+    finishedAt: string | null;
     logTail: string;
   };
   config: {

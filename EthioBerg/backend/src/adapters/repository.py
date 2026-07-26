@@ -871,6 +871,19 @@ class Repository:
             ).fetchone()
             return dict(row) if row else None
 
+    def get_latest_scrape_job(self) -> dict[str, Any] | None:
+        """The most recent job whatever its state.
+
+        Status reporting uses this rather than the active job so that a run's
+        counts and log survive it finishing; otherwise every completed or failed
+        run reads back as if it never happened.
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM scrape_jobs ORDER BY started_at DESC, rowid DESC LIMIT 1"
+            ).fetchone()
+            return dict(row) if row else None
+
     def save_scrape_chunks(self, records: list[dict[str, Any]]) -> None:
         with self._connect() as conn:
             conn.executemany(

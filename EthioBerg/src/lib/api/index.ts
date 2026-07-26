@@ -150,7 +150,16 @@ function createMockApi(actor?: ActorRef) {
     getScraperStatus: () =>
       toPromise({
         archive: { totalChunks: 0, lastSyncDate: null, status: "IDLE" },
-        scrape: { running: false, jobId: null, pagesSynced: 0, chunksSynced: 0, logTail: "" },
+        scrape: {
+          running: false,
+          status: "idle",
+          jobId: null,
+          pagesSynced: 0,
+          chunksSynced: 0,
+          startedAt: null,
+          finishedAt: null,
+          logTail: "",
+        },
         config: { seedCount: 1, workers: 4 },
       }),
     getScraperDocuments: () =>

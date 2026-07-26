@@ -48,7 +48,10 @@ class ScraperService:
         return saved
 
     def get_status(self) -> dict[str, Any]:
-        job = self.repository.get_active_scrape_job()
+        # The latest job rather than the running one: a scrape of a few seeds
+        # finishes in seconds, so reporting only running jobs leaves the caller
+        # with zeros and no log for every run that has already ended.
+        job = self.repository.get_latest_scrape_job()
         archive = self.repository.get_scrape_archive_stats()
         if self.pinecone:
             try:
@@ -56,18 +59,22 @@ class ScraperService:
                 archive["pineconeChunks"] = pinecone_stats.get("chunkCount", 0)
             except Exception:
                 archive["pineconeChunks"] = archive.get("totalChunks", 0)
+        config = self.get_config()
         return {
             "archive": archive,
             "scrape": {
                 "running": job is not None and job["status"] == "running",
+                "status": job["status"] if job else "idle",
                 "jobId": job["id"] if job else None,
                 "pagesSynced": job.get("pages_synced", 0) if job else 0,
                 "chunksSynced": job.get("chunks_synced", 0) if job else 0,
+                "startedAt": job.get("started_at") if job else None,
+                "finishedAt": job.get("finished_at") if job else None,
                 "logTail": (job.get("log_text") or "")[-4000:] if job else "",
             },
             "config": {
-                "seedCount": len(self.get_config().get("seeds", [])),
-                "workers": self.get_config().get("workers", 4),
+                "seedCount": len(config.get("seeds", [])),
+                "workers": config.get("workers", 4),
             },
         }
 

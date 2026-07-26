@@ -36,9 +36,14 @@ seeded state whenever the backend wakes up:
 - the source library returns to its 3 seeded entries
 - ingestion setting versions, evaluation run history, and the audit log are cleared
 - uploaded issuer documents are deleted
+- the scraped archive and its job history are emptied, so the Web Scraper page reports
+  0 DB chunks until you run a scrape again
 
 Question answering is unaffected. The regulatory corpus ships inside the image, and the
-Pinecone index lives outside Render entirely.
+Pinecone index lives outside Render entirely. The scraper is a partial exception to the
+list above for the same reason: every run also upserts its chunks into Pinecone, so
+scraped content stays searchable even once the SQLite copy behind the archive table is
+gone.
 
 ## Making state durable
 

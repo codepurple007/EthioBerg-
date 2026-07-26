@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
   Download,
   Globe,
@@ -33,6 +34,24 @@ function mapConfig(raw: Record<string, unknown>): ScraperConfig {
   };
 }
 
+function runSummary(scrape: ScraperStatus["scrape"]): string | null {
+  const counts = `${scrape.pagesSynced} page${scrape.pagesSynced === 1 ? "" : "s"}, ${scrape.chunksSynced} chunk${scrape.chunksSynced === 1 ? "" : "s"}`;
+  if (scrape.running) return `Scraping now — ${counts} so far.`;
+
+  const finished = scrape.finishedAt ? new Date(scrape.finishedAt).toLocaleString() : null;
+  const when = finished ? ` at ${finished}` : "";
+  switch (scrape.status) {
+    case "completed":
+      return `Last run finished${when} — ${counts}.`;
+    case "stopped":
+      return `Last run was stopped${when} — ${counts} before stopping.`;
+    case "failed":
+      return `Last run failed${when} after ${counts}. See the log below.`;
+    default:
+      return null;
+  }
+}
+
 function toPayload(config: ScraperConfig) {
   return {
     chunkSize: config.chunkSize,
@@ -61,6 +80,7 @@ export default function ScraperControlPanel() {
   const [saved, setSaved] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const wasRunning = useRef(false);
 
   const showToast = (message: string, kind: "success" | "info" = "info") => {
     setToastKind(kind);
@@ -68,17 +88,21 @@ export default function ScraperControlPanel() {
     window.setTimeout(() => setToast(null), 4000);
   };
 
-  const refresh = useCallback(async () => {
-    const [cfg, st, docs] = await Promise.all([
-      api.getScraperConfig(),
-      api.getScraperStatus(),
-      api.getScraperDocuments(page),
-    ]);
-    setConfig(mapConfig(cfg as Record<string, unknown>));
-    setStatus(st);
+  const loadDocuments = useCallback(async () => {
+    const docs = await api.getScraperDocuments(page);
     setDocuments(docs.documents as ScrapeArchiveDocument[]);
     setTotalPages(docs.pagination.totalPages);
   }, [api, page]);
+
+  const refresh = useCallback(async () => {
+    const [cfg, st] = await Promise.all([
+      api.getScraperConfig(),
+      api.getScraperStatus(),
+      loadDocuments(),
+    ]);
+    setConfig(mapConfig(cfg as Record<string, unknown>));
+    setStatus(st);
+  }, [api, loadDocuments]);
 
   useEffect(() => {
     setLoading(true);
@@ -88,17 +112,23 @@ export default function ScraperControlPanel() {
   }, [refresh]);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      api.getScraperStatus().then(setStatus).catch(() => undefined);
-      if (status?.scrape.running) {
-        api.getScraperDocuments(page).then((docs) => {
-          setDocuments(docs.documents as ScrapeArchiveDocument[]);
-          setTotalPages(docs.pagination.totalPages);
-        }).catch(() => undefined);
+    const id = window.setInterval(async () => {
+      let next: ScraperStatus;
+      try {
+        next = await api.getScraperStatus();
+      } catch {
+        return;
       }
+      setStatus(next);
+      // A run's last chunks land as it stops, so poll the archive through the
+      // run and once more after it ends rather than only while it is running.
+      if (next.scrape.running || wasRunning.current) {
+        await loadDocuments().catch(() => undefined);
+      }
+      wasRunning.current = next.scrape.running;
     }, 3000);
     return () => window.clearInterval(id);
-  }, [api, page, status?.scrape.running]);
+  }, [api, loadDocuments]);
 
   async function saveConfig(next: ScraperConfig) {
     setBusy(true);
@@ -129,6 +159,9 @@ export default function ScraperControlPanel() {
     try {
       const result = await api.startScraper();
       showToast(result.message);
+      // A short run can finish before the first poll, so arm the post-run
+      // archive refresh here rather than waiting for the poller to see it run.
+      wasRunning.current = true;
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start scrape.");
@@ -167,6 +200,7 @@ export default function ScraperControlPanel() {
   }
 
   const running = status?.scrape.running ?? false;
+  const summary = status ? runSummary(status.scrape) : null;
 
   return (
     <>
@@ -353,6 +387,25 @@ export default function ScraperControlPanel() {
                 Clear archive
               </button>
             </div>
+
+            {summary && (
+              <div
+                className={`flex items-start gap-2 rounded px-3 py-2 text-[12px] ${
+                  status?.scrape.status === "failed"
+                    ? "border border-[#f06548] bg-[#fdf0ee] text-[#f06548]"
+                    : "border border-[#e9ebec] bg-[#f8f9fa] text-[#495057]"
+                }`}
+              >
+                {running ? (
+                  <Loader2 size={14} className="mt-0.5 shrink-0 animate-spin" />
+                ) : status?.scrape.status === "failed" ? (
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                ) : (
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#0ab39c]" />
+                )}
+                <span>{summary}</span>
+              </div>
+            )}
 
             {status?.scrape.logTail && (
               <pre className="max-h-40 overflow-auto rounded bg-[#1e1e2d] p-3 text-[11px] text-[#a6b0cf] whitespace-pre-wrap">
