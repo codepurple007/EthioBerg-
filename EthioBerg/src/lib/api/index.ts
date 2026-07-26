@@ -30,6 +30,11 @@ import { mockPlatformStore } from "@/lib/api/mock-platform";
 import { mockDocumentStore } from "@/lib/api/mock-documents";
 import { askMockRegulatoryQuestion, getMockRegulatoryCorpusStats } from "@/lib/api/mock-regulatory";
 import { exploreMockCompany, resolveMockCompany } from "@/lib/api/mock-companies-explorer";
+import {
+  mockReportCandidates,
+  mockReportExport,
+  mockReportPreview,
+} from "@/lib/api/mock-reports";
 import { checkApiHealth, createHttpApi } from "@/lib/api/http-client";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -136,6 +141,9 @@ function createMockApi(actor?: ActorRef) {
     getRegulatoryCorpusStats: () => toPromise(getMockRegulatoryCorpusStats()),
     askRegulatoryQuestion: (payload: RegulatoryAskRequest) =>
       toPromise(askMockRegulatoryQuestion(payload)),
+    getReportCandidates: () => toPromise(mockReportCandidates()),
+    getReportPreview: (documentId: string) => toPromise(mockReportPreview(documentId)),
+    exportReportDocx: (documentId: string) => toPromise(mockReportExport(documentId)),
     getScraperConfig: () =>
       toPromise({
         chunkSize: 500,

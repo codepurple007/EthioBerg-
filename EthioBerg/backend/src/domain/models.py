@@ -524,3 +524,69 @@ class ScraperConfigInput(ApiModel):
     user_agent: str = Field(default="EthioBerg-WebScraper/1.0", alias="userAgent")
     default_rate_delay_ms: int = Field(default=250, alias="defaultRateDelayMs")
     seeds: list[ScrapeSeedInput] = Field(default_factory=list)
+
+
+class ReportCitation(ApiModel):
+    """Where a requirement's threshold comes from, so a reader can check it."""
+
+    rule_id: str = Field(alias="ruleId")
+    rule_name: str = Field(alias="ruleName")
+    section: str
+    source_title: str = Field(alias="sourceTitle")
+    issuing_body: str = Field(alias="issuingBody")
+    source_version: str = Field(alias="sourceVersion")
+    publication_date: str = Field(alias="publicationDate")
+    url: str = ""
+
+
+class ReportEvidence(ApiModel):
+    """A figure the evaluation relied on, traced back to where it was read."""
+
+    field: str
+    value: float | int | str | None = None
+    unit: str
+    period: str | None = None
+    source_page: int | None = Field(default=None, alias="sourcePage")
+    source_quote: str | None = Field(default=None, alias="sourceQuote")
+    confidence: float
+    status: str
+
+
+class ReportCaveat(ApiModel):
+    """A limit on how far the report's conclusions can be relied upon."""
+
+    severity: Literal["critical", "warning", "info"]
+    message: str
+
+
+class ReportCandidate(ApiModel):
+    """An uploaded document and whether a report can be produced from it yet."""
+
+    document_id: str = Field(alias="documentId")
+    filename: str
+    segment: MarketSegment
+    upload_timestamp: str = Field(alias="uploadTimestamp")
+    extraction_status: str = Field(alias="extractionStatus")
+    facts_confirmed: bool = Field(alias="factsConfirmed")
+    fact_count: int = Field(alias="factCount")
+    ready: bool
+    blocked_reason: str = Field(default="", alias="blockedReason")
+
+
+class ReportPreview(ApiModel):
+    document_id: str = Field(alias="documentId")
+    filename: str
+    segment: MarketSegment
+    checksum: str
+    page_count: int = Field(alias="pageCount")
+    upload_timestamp: str = Field(alias="uploadTimestamp")
+    rule_version: str = Field(alias="ruleVersion")
+    generated_at: str = Field(alias="generatedAt")
+    generated_by: str = Field(alias="generatedBy")
+    summary: dict[str, int]
+    category_summary: list[dict[str, int | str]] = Field(alias="categorySummary")
+    requirements: list[RequirementResult]
+    evidence: list[ReportEvidence] = Field(default_factory=list)
+    citations: list[ReportCitation] = Field(default_factory=list)
+    caveats: list[ReportCaveat] = Field(default_factory=list)
+    disclaimer: str

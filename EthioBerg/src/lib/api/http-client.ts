@@ -30,6 +30,8 @@ import type {
   RegulatoryCorpusStats,
   RetrievalHealth,
   RetrievalProbeResult,
+  ReportCandidate,
+  ReportPreview,
   RetrievalSettings,
   RetrievalSettingsInput,
   ScraperConfig,
@@ -99,6 +101,41 @@ export async function checkApiHealth(timeoutMs = HEALTH_TIMEOUT_MS): Promise<boo
   } catch {
     return false;
   }
+}
+
+/**
+ * Fetch a binary attachment, preferring the filename the server chose.
+ *
+ * A plain link cannot be used for these because the endpoint requires the actor
+ * headers, which only a scripted fetch can attach.
+ */
+async function requestBlob(
+  path: string,
+  actor?: ActorRef,
+): Promise<{ filename: string; blob: Blob }> {
+  const headers: Record<string, string> = {};
+  if (actor) {
+    headers["X-Actor-Id"] = actor.actorId;
+    headers["X-Actor-Name"] = actor.actorName;
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try {
+      const body = (await response.json()) as { detail?: string };
+      if (body.detail) detail = body.detail;
+    } catch {
+      /* the error body is not always JSON */
+    }
+    throw new ApiError(detail, response.status);
+  }
+
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)?.[1];
+  const filename = encoded ? decodeURIComponent(encoded) : (plain ?? "download");
+
+  return { filename, blob: await response.blob() };
 }
 
 async function requestForm<T>(path: string, form: FormData, actor?: ActorRef): Promise<T> {
@@ -221,6 +258,11 @@ export function createHttpApi(actor?: ActorRef) {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    getReportCandidates: () => request<ReportCandidate[]>("/api/v1/reports/candidates"),
+    getReportPreview: (documentId: string) =>
+      request<ReportPreview>(`/api/v1/reports/${documentId}/preview`, {}, actor),
+    exportReportDocx: (documentId: string) =>
+      requestBlob(`/api/v1/reports/${documentId}/export.docx`, actor),
     getScraperConfig: () => request<Record<string, unknown>>("/api/v1/scraper/config"),
     updateScraperConfig: (payload: ScraperConfig) =>
       request<Record<string, unknown>>("/api/v1/scraper/config", {

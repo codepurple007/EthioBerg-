@@ -12,6 +12,7 @@ from src.api.routes import (
     quality,
     readiness,
     regulatory,
+    reports,
     retrieval,
     rules,
     scraper,
@@ -57,6 +58,7 @@ api_router.include_router(dashboard.router)
 api_router.include_router(documents.router)
 api_router.include_router(regulatory.router)
 api_router.include_router(readiness.router)
+api_router.include_router(reports.router)
 api_router.include_router(scraper.router)
 api_router.include_router(ingestion.router)
 api_router.include_router(retrieval.router)

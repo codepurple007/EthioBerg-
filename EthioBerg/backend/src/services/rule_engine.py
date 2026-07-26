@@ -27,9 +27,21 @@ def load_rules_from_directory(rules_dir: Path) -> list[RuleDefinition]:
     return rules
 
 
+def format_number(value: float | int) -> str:
+    """Render a figure for a reader rather than for a debugger.
+
+    `:g` collapses 500000000 to "5e+08", which is unusable in a threshold shown
+    on screen or printed in a report.
+    """
+    number = float(value)
+    if number.is_integer():
+        return f"{int(number):,}"
+    return f"{number:,.2f}"
+
+
 def format_threshold(rule: RuleDefinition) -> str:
     if rule.operator == RuleOperator.RANGE and rule.threshold_max is not None:
-        return f"{rule.threshold:g}–{rule.threshold_max:g} {rule.unit}"
+        return f"{format_number(rule.threshold)}–{format_number(rule.threshold_max)} {rule.unit}"
     op_label = {
         RuleOperator.GTE: "≥",
         RuleOperator.LTE: "≤",
@@ -37,7 +49,7 @@ def format_threshold(rule: RuleDefinition) -> str:
         RuleOperator.LT: "<",
         RuleOperator.EQ: "=",
     }.get(rule.operator, rule.operator)
-    return f"{op_label} {rule.threshold:g} {rule.unit}"
+    return f"{op_label} {format_number(rule.threshold)} {rule.unit}"
 
 
 def compare(operator: RuleOperator, value: float, threshold: float, threshold_max: float | None) -> bool:
@@ -229,7 +241,7 @@ class RuleEngine:
                     threshold=format_threshold(rule),
                     category=rule.category,
                     source_section=rule.source_section,
-                    calculation=f"{numeric:g} compared to {format_threshold(rule)}",
+                    calculation=f"{format_number(numeric)} compared to {format_threshold(rule)}",
                 )
             )
 

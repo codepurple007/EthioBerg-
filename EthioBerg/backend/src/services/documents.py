@@ -159,6 +159,16 @@ class DocumentService:
         return self.get_document(document_id)
 
     def evaluate_document(self, document_id: str, actor: ActorRef) -> DocumentEvaluateResponse:
+        response = self.evaluation_for(document_id)
+        self.repository.log_audit(actor, "READINESS_RUN_STARTED", "IssuerDocument", document_id)
+        return response
+
+    def evaluation_for(self, document_id: str) -> DocumentEvaluateResponse:
+        """Evaluate without auditing, for callers that record their own action.
+
+        Reporting reads an evaluation to render it; logging that as a readiness
+        run would make the audit trail claim work that never happened.
+        """
         document = self.get_document(document_id)
         if not document.facts_confirmed:
             raise ValueError("Facts must be user-confirmed before evaluation.")
@@ -181,8 +191,6 @@ class DocumentService:
         for result in results:
             bucket = category_summary.setdefault(result.category, {})
             bucket[result.state] = bucket.get(result.state, 0) + 1
-
-        self.repository.log_audit(actor, "READINESS_RUN_STARTED", "IssuerDocument", document_id)
 
         return DocumentEvaluateResponse(
             documentId=document_id,

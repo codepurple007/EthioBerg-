@@ -10,6 +10,7 @@ from src.services.ocr import OcrOptions
 from src.services.platform_config import PlatformConfigService
 from src.services.rag_quality import RagQualityService
 from src.services.regulatory_qa import RegulatoryQAService
+from src.services.reports import ReportService
 from src.services.retrieval.pinecone_store import PineconeConfig, PineconeStore
 from src.services.source_indexing import SourceIndexingService
 from src.services.scraper_service import ScraperService
@@ -46,6 +47,7 @@ def _ocr_options() -> OcrOptions:
 
 
 document_service = DocumentService(repository, UPLOADS_DIR, _ocr_options)
+report_service = ReportService(repository, document_service)
 
 _pinecone_config = PineconeConfig.from_env()
 _pinecone_store = PineconeStore(_pinecone_config) if _pinecone_config else None

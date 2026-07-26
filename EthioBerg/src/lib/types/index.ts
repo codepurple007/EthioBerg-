@@ -536,6 +536,64 @@ export type RagQualityOverview = {
   progress: EvaluationProgress;
 };
 
+export type ReportCitation = {
+  ruleId: string;
+  ruleName: string;
+  section: string;
+  sourceTitle: string;
+  issuingBody: string;
+  sourceVersion: string;
+  publicationDate: string;
+  url: string;
+};
+
+export type ReportEvidence = {
+  field: string;
+  value: number | string | null;
+  unit: string;
+  period: string | null;
+  sourcePage: number | null;
+  sourceQuote: string | null;
+  confidence: number;
+  status: string;
+};
+
+export type ReportCaveat = {
+  severity: "critical" | "warning" | "info";
+  message: string;
+};
+
+export type ReportCandidate = {
+  documentId: string;
+  filename: string;
+  segment: MarketSegment;
+  uploadTimestamp: string;
+  extractionStatus: string;
+  factsConfirmed: boolean;
+  factCount: number;
+  ready: boolean;
+  blockedReason: string;
+};
+
+export type ReportPreview = {
+  documentId: string;
+  filename: string;
+  segment: MarketSegment;
+  checksum: string;
+  pageCount: number;
+  uploadTimestamp: string;
+  ruleVersion: string;
+  generatedAt: string;
+  generatedBy: string;
+  summary: Record<string, number>;
+  categorySummary: Array<Record<string, number | string>>;
+  requirements: RequirementResult[];
+  evidence: ReportEvidence[];
+  citations: ReportCitation[];
+  caveats: ReportCaveat[];
+  disclaimer: string;
+};
+
 export type ScraperStatus = {
   archive: {
     totalChunks: number;
