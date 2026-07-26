@@ -82,9 +82,19 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
-export async function checkApiHealth(): Promise<boolean> {
+/**
+ * A free-tier backend that has gone to sleep answers with an error for roughly a
+ * minute while it wakes, so the check is given a generous ceiling rather than
+ * being read as "no backend here".
+ */
+const HEALTH_TIMEOUT_MS = 20_000;
+
+export async function checkApiHealth(timeoutMs = HEALTH_TIMEOUT_MS): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
     return response.ok;
   } catch {
     return false;

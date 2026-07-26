@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import DisclaimerBanner from "@/components/ui/DisclaimerBanner";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen flex-col lg:ml-[250px]">
         <Header onToggleSidebar={() => setMobileOpen((v) => !v)} />
         <main className="flex-1 px-4 py-4 sm:px-6">
+          <DemoModeBanner />
           <DisclaimerBanner />
           {children}
         </main>

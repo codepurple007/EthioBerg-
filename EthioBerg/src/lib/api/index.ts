@@ -195,13 +195,18 @@ function createMockApi(actor?: ActorRef) {
   };
 }
 
-let remoteAvailable: boolean | null = USE_MOCK ? false : null;
+/** True when this build is pinned to demo data and should never call a backend. */
+export const isMockForced = () => USE_MOCK;
+
+let remoteAvailable = false;
 
 export async function resolveApiMode(): Promise<"remote" | "mock"> {
   if (USE_MOCK) return "mock";
-  if (remoteAvailable === null) {
-    remoteAvailable = await checkApiHealth();
-  }
+  // Only success is cached. A sleeping free-tier backend fails the first check
+  // and needs about a minute to wake; caching that failure would strand the
+  // session in demo data while the real API was coming up behind it.
+  if (remoteAvailable) return "remote";
+  remoteAvailable = await checkApiHealth();
   return remoteAvailable ? "remote" : "mock";
 }
 
