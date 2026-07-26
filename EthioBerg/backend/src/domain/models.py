@@ -361,7 +361,7 @@ class ChunkPreviewResponse(ApiModel):
 
 
 class RetrievalSettings(ApiModel):
-    retrieval_backend: str = Field(default="auto", alias="retrievalBackend")
+    retrieval_backend: str = Field(default="hybrid", alias="retrievalBackend")
     top_k: int = Field(default=5, alias="topK")
     candidate_pool: int = Field(default=40, alias="candidatePool")
     rrf_k: int = Field(default=60, alias="rrfK")
@@ -377,7 +377,7 @@ class RetrievalSettings(ApiModel):
 
 class RetrievalSettingsInput(ApiModel):
     retrieval_backend: Literal["auto", "hybrid", "pinecone"] = Field(
-        default="auto", alias="retrievalBackend"
+        default="hybrid", alias="retrievalBackend"
     )
     top_k: int = Field(default=5, ge=1, le=20, alias="topK")
     candidate_pool: int = Field(default=40, ge=5, le=200, alias="candidatePool")

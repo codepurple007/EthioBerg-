@@ -20,9 +20,9 @@ from src.services.rule_engine import PRE_REVIEW_DISCLAIMER, summarize_results
 
 
 class DocumentService:
-    def __init__(self, repository):
+    def __init__(self, repository, upload_dir: Path | None = None):
         self.repository = repository
-        self.upload_dir = Path(__file__).resolve().parents[2] / "data" / "uploads"
+        self.upload_dir = upload_dir or Path(__file__).resolve().parents[2] / "data" / "uploads"
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
     def upload_document(

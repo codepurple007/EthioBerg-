@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,12 +25,23 @@ app = FastAPI(
     version="0.2.0",
 )
 
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:3005",
+    "http://127.0.0.1:3005",
+]
+
+
+def _allowed_origins() -> list[str]:
+    """Local dev origins plus any comma-separated origins from CORS_ALLOW_ORIGINS."""
+    configured = os.environ.get("CORS_ALLOW_ORIGINS", "")
+    extra = [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+    return [*DEFAULT_ALLOWED_ORIGINS, *extra]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3005",
-        "http://127.0.0.1:3005",
-    ],
+    allow_origins=_allowed_origins(),
+    allow_origin_regex=os.environ.get("CORS_ALLOW_ORIGIN_REGEX") or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

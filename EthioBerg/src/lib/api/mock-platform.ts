@@ -45,6 +45,7 @@ const defaultIngestion: IngestionSettings = {
 
 const defaultRetrieval: RetrievalSettings = {
   retrievalBackend: "hybrid",
+  // keep in sync with the backend default in src/domain/models.py
   topK: 5,
   candidatePool: 40,
   rrfK: 60,

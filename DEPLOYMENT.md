@@ -1,0 +1,82 @@
+# Deploying EthioBerg to Render
+
+`render.yaml` at the repo root defines both services, so Render can create them in one step.
+
+| Service | Type | Root directory | URL |
+|---|---|---|---|
+| `ethioberg-api` | Python web service | `EthioBerg/backend` | `https://ethioberg-api.onrender.com` |
+| `ethioberg-web` | Node web service | `EthioBerg` | `https://ethioberg-web.onrender.com` |
+
+## First deploy
+
+1. Push `main` to GitHub. Render deploys from the repo, not from your working copy.
+2. In the Render dashboard choose **New → Blueprint** and pick the `EthioBerg-` repo.
+3. Render reads `render.yaml` and shows both services. It prompts for `PINECONE_API_KEY`;
+   leave it blank unless you want the hosted vector index (see below).
+4. Apply. The backend builds first because the frontend reads its hostname.
+
+Both services are on the `starter` plan. The backend needs a paid instance because it has
+a persistent disk attached; free instances cannot mount one.
+
+## Why the backend has a disk
+
+All backend state is on the filesystem: the SQLite database, uploaded issuer documents,
+and stored source files. Render's filesystem is otherwise wiped on every deploy, which
+would reset the source library, ingestion setting versions, evaluation history, and the
+audit log.
+
+The disk mounts at `/var/data` and `ETHIOBERG_DATA_DIR` points the application there. A
+service with a disk runs a single instance and does not get zero-downtime deploys — both
+expected, since SQLite allows only one writer.
+
+## Environment variables
+
+Backend (`ethioberg-api`):
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `PYTHON_VERSION` | `3.13.7` | Pinned; Render's default 3.14 has thinner wheel coverage |
+| `ETHIOBERG_DATA_DIR` | `/var/data` | Puts the database and uploads on the disk |
+| `CORS_ALLOW_ORIGIN_REGEX` | matches `ethioberg-web*.onrender.com` | Lets the browser call the API |
+| `PINECONE_API_KEY` | *(prompted, optional)* | Only for the hosted vector index |
+| `PINECONE_INDEX_NAME` | `ethioberg-regulatory` | |
+| `PINECONE_NAMESPACE` | `regulatory` | |
+
+Frontend (`ethioberg-web`):
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `NODE_VERSION` | `22.22.0` | Matches the version the build is tested against |
+| `API_EXTERNAL_HOSTNAME` | from `ethioberg-api` | Public hostname of the API |
+
+`NEXT_PUBLIC_API_URL` is not set as a variable. Next.js inlines `NEXT_PUBLIC_*` values into
+the browser bundle at build time, so the build command composes it from
+`API_EXTERNAL_HOSTNAME`. Render's `fromService` `property: host` is deliberately not used:
+it returns the *private* hostname, which a browser cannot reach.
+
+## If you rename a service
+
+Two places assume the names above:
+
+- `CORS_ALLOW_ORIGIN_REGEX` must match the frontend's real hostname, or every API call
+  fails CORS in the browser.
+- The frontend's `API_EXTERNAL_HOSTNAME` reference must name the backend service.
+
+Render appends a suffix when a name is taken (`ethioberg-web-a1b2.onrender.com`); the
+regex already allows for that.
+
+## Retrieval backend
+
+Retrieval defaults to the in-process hybrid retriever (BM25 + TF-IDF with reciprocal rank
+fusion). It needs no external service, answers in milliseconds, and correctly refuses
+out-of-scope questions.
+
+Pinecone is optional and selectable per environment under **Admin → Retrieval Operations**.
+It indexes far more content, but each query takes several seconds, and because it scores
+unrelated questions nearly as highly as valid ones, the pipeline's abstention behaviour is
+weaker. Set `PINECONE_API_KEY` and switch the backend there if you want it.
+
+## Cold starts
+
+Starter instances sleep after inactivity and take roughly a minute to wake. Load the site
+before a demo so the first request is not the slow one.

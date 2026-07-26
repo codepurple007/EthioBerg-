@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -16,7 +17,9 @@ from src.services.sources import SourceService
 ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
-DATA_DIR = ROOT_DIR / "data"
+# Point ETHIOBERG_DATA_DIR at a mounted volume in hosted environments; the local
+# default lives inside the backend directory and is gitignored.
+DATA_DIR = Path(os.environ.get("ETHIOBERG_DATA_DIR") or ROOT_DIR / "data")
 RULES_DIR = ROOT_DIR / "config" / "rules"
 CORPUS_DIR = ROOT_DIR / "config" / "corpus"
 SCRAPER_CONFIG_PATH = ROOT_DIR / "config" / "scraper" / "default_seeds.yaml"
@@ -24,10 +27,11 @@ GOLDEN_SET_PATH = ROOT_DIR / "config" / "quality" / "golden_set.yaml"
 FIXTURES_DIR = ROOT_DIR / "config" / "fixtures"
 SYNTHETIC_DIR = ROOT_DIR / "config" / "synthetic_demo"
 SOURCES_DIR = DATA_DIR / "sources"
+UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "ethioberg.db"
 
 repository = Repository(DB_PATH, RULES_DIR)
-document_service = DocumentService(repository)
+document_service = DocumentService(repository, UPLOADS_DIR)
 
 _pinecone_config = PineconeConfig.from_env()
 _pinecone_store = PineconeStore(_pinecone_config) if _pinecone_config else None

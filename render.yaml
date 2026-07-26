@@ -1,0 +1,65 @@
+# Render Blueprint for EthioBerg.
+#
+# Two services: the FastAPI backend and the Next.js frontend. The backend keeps
+# all state in SQLite plus uploaded files, so it has a persistent disk mounted at
+# /var/data; without it every deploy would reset sources, ingestion settings,
+# evaluation runs, and the audit log.
+#
+# Services with a disk cannot scale beyond one instance and do not get
+# zero-downtime deploys. That is expected here, since SQLite has a single writer.
+
+services:
+  - type: web
+    name: ethioberg-api
+    runtime: python
+    plan: starter # a disk requires a paid instance type
+    region: oregon
+    rootDir: EthioBerg/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: ethioberg-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      # Pinned to the version this dependency set is known to build against.
+      # Render's current default is 3.14, which has thinner wheel coverage.
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      # Moves the SQLite database, uploads, and stored sources onto the disk.
+      - key: ETHIOBERG_DATA_DIR
+        value: /var/data
+      # The frontend calls this API from the browser, so its public origin must be
+      # allowed. Matched by pattern to avoid a circular service reference.
+      - key: CORS_ALLOW_ORIGIN_REGEX
+        value: ^https://ethioberg-web(-[a-z0-9]+)?\.onrender\.com$
+      # Optional. Only needed to serve retrieval from the hosted vector index;
+      # the default in-process retriever works without it.
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: ethioberg-regulatory
+      - key: PINECONE_NAMESPACE
+        value: regulatory
+
+  - type: web
+    name: ethioberg-web
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: EthioBerg
+    # NEXT_PUBLIC_* values are inlined into the client bundle at build time, so the
+    # API URL has to be present here rather than only at runtime.
+    buildCommand: npm ci && NEXT_PUBLIC_API_URL="https://$API_EXTERNAL_HOSTNAME" npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      # Public hostname of the API service, e.g. ethioberg-api.onrender.com.
+      # `property: host` would give the private hostname, which the browser cannot reach.
+      - key: API_EXTERNAL_HOSTNAME
+        fromService:
+          name: ethioberg-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
