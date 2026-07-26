@@ -332,6 +332,21 @@ export default function IngestionControlPanel() {
                 </span>
               </label>
 
+              {stats && !stats.ocr.available && (
+                <p className="mt-2 ml-6 rounded border border-[#f7b84b] bg-[#fef8ec] px-3 py-2 text-[12px] text-[#a67512]">
+                  OCR cannot run in this environment, so scanned pages will yield no text even
+                  while this setting is on. {stats.ocr.detail}
+                </p>
+              )}
+              {stats?.ocr.available && (
+                <p className="mt-2 ml-6 text-[12px] text-[#0ab39c]">
+                  Tesseract {stats.ocr.version} available
+                  {stats.ocr.languages.length > 0
+                    ? ` · languages: ${stats.ocr.languages.join(", ")}`
+                    : ""}
+                </p>
+              )}
+
               <div className="mt-3 space-y-3 pl-6">
                 <NumberField
                   label="Trigger OCR below (characters per page)"

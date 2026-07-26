@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Callable
 from uuid import uuid4
 
 from src.domain.enums import FactStatus, MarketSegment
@@ -14,16 +15,52 @@ from src.domain.models import (
 )
 from src.services.extraction import extract_facts
 from src.services.ingestion import IngestionError, ParsedDocument, ParsedPage, parse_document
+from src.services.ocr import OcrOptions
 from src.services.rule_engine import PRE_REVIEW_DISCLAIMER, summarize_results
 from src.adapters.repository import _now_iso
 from src.services.rule_engine import PRE_REVIEW_DISCLAIMER, summarize_results
 
 
+def _extraction_warnings(parsed: ParsedDocument, ocr: OcrOptions) -> list[str]:
+    """Describe what text extraction actually managed, without overstating it."""
+    warnings: list[str] = []
+
+    if parsed.ocr_pages:
+        pages = ", ".join(str(page) for page in parsed.ocr_pages)
+        warnings.append(
+            f"Recovered text from {len(parsed.ocr_pages)} scanned page(s) using OCR (pages {pages}). "
+            "OCR output can contain recognition errors; verify figures against the source."
+        )
+
+    if parsed.ocr_error:
+        warnings.append(f"OCR fallback could not run: {parsed.ocr_error}")
+
+    if not parsed.full_text.strip():
+        if not ocr.enabled:
+            warnings.append(
+                "No embedded text detected and OCR fallback is disabled. "
+                "Enable it under Admin → Ingestion to read scanned documents."
+            )
+        elif not parsed.ocr_error:
+            warnings.append("No text could be extracted from this document, including by OCR.")
+
+    return warnings
+
+
 class DocumentService:
-    def __init__(self, repository, upload_dir: Path | None = None):
+    def __init__(
+        self,
+        repository,
+        upload_dir: Path | None = None,
+        ocr_options_provider: Callable[[], OcrOptions] | None = None,
+    ):
         self.repository = repository
         self.upload_dir = upload_dir or Path(__file__).resolve().parents[2] / "data" / "uploads"
         self.upload_dir.mkdir(parents=True, exist_ok=True)
+        self.ocr_options_provider = ocr_options_provider
+
+    def _ocr_options(self) -> OcrOptions:
+        return self.ocr_options_provider() if self.ocr_options_provider else OcrOptions()
 
     def upload_document(
         self,
@@ -32,8 +69,9 @@ class DocumentService:
         segment: MarketSegment,
         actor: ActorRef,
     ) -> IssuerDocument:
+        ocr_options = self._ocr_options()
         try:
-            parsed = parse_document(filename, content)
+            parsed = parse_document(filename, content, ocr_options)
         except IngestionError as exc:
             raise exc
 
@@ -41,9 +79,7 @@ class DocumentService:
         stored_path = self.upload_dir / f"{document_id}{Path(filename).suffix.lower()}"
         stored_path.write_bytes(content)
 
-        warnings: list[str] = []
-        if not parsed.full_text.strip():
-            warnings.append("No embedded text detected. OCR fallback is not enabled in this MVP build.")
+        warnings = _extraction_warnings(parsed, ocr_options)
 
         with self.repository._connect() as conn:
             conn.execute(

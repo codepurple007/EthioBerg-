@@ -4,8 +4,13 @@
 
 | Service | Type | Root directory | URL |
 |---|---|---|---|
-| `ethioberg-api` | Python web service | `EthioBerg/backend` | `https://ethioberg-api.onrender.com` |
+| `ethioberg-api` | Docker web service | `EthioBerg/backend` | `https://ethioberg-api.onrender.com` |
 | `ethioberg-web` | Node web service | `EthioBerg` | `https://ethioberg-web.onrender.com` |
+
+The backend builds from `EthioBerg/backend/Dockerfile` rather than using Render's native
+Python runtime, because OCR needs the Tesseract system binary and the native runtime has no
+root access to install system packages. The Dockerfile pins Python and installs Tesseract
+with English and Amharic language data, so there is no build or start command to configure.
 
 ## First deploy
 
@@ -35,7 +40,6 @@ Backend (`ethioberg-api`):
 
 | Variable | Value | Purpose |
 |---|---|---|
-| `PYTHON_VERSION` | `3.13.7` | Pinned; Render's default 3.14 has thinner wheel coverage |
 | `ETHIOBERG_DATA_DIR` | `/var/data` | Puts the database and uploads on the disk |
 | `CORS_ALLOW_ORIGIN_REGEX` | matches `ethioberg-web*.onrender.com` | Lets the browser call the API |
 | `PINECONE_API_KEY` | *(prompted, optional)* | Only for the hosted vector index |
@@ -86,6 +90,25 @@ persists across deploys and takes precedence over the default above.
 Because the setting is stored, an environment that has been changed once will not pick up a
 change to the default. Check the current value on the Retrieval Operations page rather than
 inferring it from the code.
+
+## OCR
+
+Scanned PDFs carry no text layer, so ingestion falls back to OCR for any page yielding
+fewer characters than the threshold set under **Admin → Ingestion**. This requires the
+Tesseract binary, which only the Docker image provides — running the backend from a plain
+`pip install` leaves OCR unavailable.
+
+The application never pretends otherwise. `GET /api/v1/ingestion/stats` reports whether
+Tesseract is present along with its installed languages, the Ingestion page shows a warning
+when it is not, and an upload that needed OCR but could not run says so in its extraction
+warnings rather than reporting empty text as success.
+
+To add a language, install its `tesseract-ocr-<code>` package in the Dockerfile. Selecting a
+language in the UI that is not installed is reported as an error rather than silently
+ignored, because passing an uninstalled code makes Tesseract fail the whole page.
+
+For local OCR, install the binary directly (`sudo apt install tesseract-ocr
+tesseract-ocr-amh`). Without it the app still runs; OCR simply reports itself unavailable.
 
 ## Cold starts
 

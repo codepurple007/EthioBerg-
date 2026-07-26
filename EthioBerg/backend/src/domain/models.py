@@ -337,6 +337,15 @@ class IngestionSettingsInput(ApiModel):
     notes: str = ""
 
 
+class OcrCapability(ApiModel):
+    """Whether OCR can actually run here, so the UI need not assume it can."""
+
+    available: bool
+    version: str = ""
+    languages: list[str] = Field(default_factory=list)
+    detail: str = ""
+
+
 class IngestionPipelineStats(ApiModel):
     total_sources: int = Field(alias="totalSources")
     indexed_sources: int = Field(alias="indexedSources")
@@ -345,6 +354,7 @@ class IngestionPipelineStats(ApiModel):
     corpus_chunks: int = Field(alias="corpusChunks")
     scrape_chunks: int = Field(alias="scrapeChunks")
     last_scrape_at: str | None = Field(default=None, alias="lastScrapeAt")
+    ocr: OcrCapability
 
 
 class ChunkPreviewItem(ApiModel):

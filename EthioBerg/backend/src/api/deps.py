@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from src.adapters.repository import Repository
 from src.services.company_explorer import CompanyExplorerService
 from src.services.documents import DocumentService
+from src.services.ocr import OcrOptions
 from src.services.platform_config import PlatformConfigService
 from src.services.rag_quality import RagQualityService
 from src.services.regulatory_qa import RegulatoryQAService
@@ -31,7 +32,20 @@ UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "ethioberg.db"
 
 repository = Repository(DB_PATH, RULES_DIR)
-document_service = DocumentService(repository, UPLOADS_DIR)
+platform_config_service = PlatformConfigService(repository)
+
+
+def _ocr_options() -> OcrOptions:
+    """Read OCR behaviour from the live ingestion settings on every upload."""
+    settings = platform_config_service.get_ingestion_settings()
+    return OcrOptions(
+        enabled=settings.ocr_fallback_enabled,
+        languages=tuple(settings.ocr_languages),
+        min_text_chars=settings.ocr_min_text_chars,
+    )
+
+
+document_service = DocumentService(repository, UPLOADS_DIR, _ocr_options)
 
 _pinecone_config = PineconeConfig.from_env()
 _pinecone_store = PineconeStore(_pinecone_config) if _pinecone_config else None
@@ -39,7 +53,6 @@ _indexing_service = SourceIndexingService(_pinecone_store) if _pinecone_store el
 
 source_service = SourceService(repository, SOURCES_DIR, _indexing_service)
 scraper_service = ScraperService(repository, SCRAPER_CONFIG_PATH, _pinecone_store)
-platform_config_service = PlatformConfigService(repository)
 regulatory_qa_service = RegulatoryQAService.from_env(
     CORPUS_DIR / "regulatory_chunks.yaml",
     source_count=len(repository.get_sources()),

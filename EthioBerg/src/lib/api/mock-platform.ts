@@ -132,6 +132,13 @@ class MockPlatformStore {
       corpusChunks: 13,
       scrapeChunks: 0,
       lastScrapeAt: null,
+      // Demo mode has no backend, so OCR is genuinely unavailable here.
+      ocr: {
+        available: false,
+        version: "",
+        languages: [],
+        detail: "Demo mode runs without a backend, so OCR cannot process uploads.",
+      },
     };
   }
 

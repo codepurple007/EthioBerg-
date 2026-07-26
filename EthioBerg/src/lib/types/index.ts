@@ -387,6 +387,13 @@ export type IngestionSettingsInput = Omit<
   "version" | "updatedAt" | "updatedBy" | "isActive"
 >;
 
+export type OcrCapability = {
+  available: boolean;
+  version: string;
+  languages: string[];
+  detail: string;
+};
+
 export type IngestionPipelineStats = {
   totalSources: number;
   indexedSources: number;
@@ -395,6 +402,7 @@ export type IngestionPipelineStats = {
   corpusChunks: number;
   scrapeChunks: number;
   lastScrapeAt: string | null;
+  ocr: OcrCapability;
 };
 
 export type ChunkPreviewItem = {

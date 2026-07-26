@@ -13,9 +13,11 @@ from src.domain.models import (
     IngestionPipelineStats,
     IngestionSettings,
     IngestionSettingsInput,
+    OcrCapability,
     RetrievalSettings,
     RetrievalSettingsInput,
 )
+from src.services.ocr import probe as ocr_probe
 from src.services.retrieval.chunking import chunk_parent_child
 
 INGESTION_KEY = "ingestion_settings"
@@ -133,7 +135,14 @@ class PlatformConfigService:
     def ingestion_stats(self, corpus_chunks: int) -> IngestionPipelineStats:
         sources = self.repository.get_sources()
         archive = self.repository.get_scrape_archive_stats()
+        ocr_status = ocr_probe()
         return IngestionPipelineStats(
+            ocr=OcrCapability(
+                available=ocr_status.available,
+                version=ocr_status.version,
+                languages=ocr_status.languages,
+                detail=ocr_status.detail,
+            ),
             totalSources=len(sources),
             indexedSources=sum(1 for s in sources if s.index_status == IndexStatus.INDEXED.value),
             pendingSources=sum(1 for s in sources if s.index_status == IndexStatus.PENDING.value),
