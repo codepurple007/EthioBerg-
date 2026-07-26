@@ -35,7 +35,7 @@ import {
   mockReportExport,
   mockReportPreview,
 } from "@/lib/api/mock-reports";
-import { checkApiHealth, createHttpApi } from "@/lib/api/http-client";
+import { createHttpApi } from "@/lib/api/http-client";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -203,23 +203,18 @@ function createMockApi(actor?: ActorRef) {
   };
 }
 
-/** True when this build is pinned to demo data and should never call a backend. */
-export const isMockForced = () => USE_MOCK;
-
-let remoteAvailable = false;
-
-export async function resolveApiMode(): Promise<"remote" | "mock"> {
-  if (USE_MOCK) return "mock";
-  // Only success is cached. A sleeping free-tier backend fails the first check
-  // and needs about a minute to wake; caching that failure would strand the
-  // session in demo data while the real API was coming up behind it.
-  if (remoteAvailable) return "remote";
-  remoteAvailable = await checkApiHealth();
-  return remoteAvailable ? "remote" : "mock";
-}
+/**
+ * Demo data is opt-in via NEXT_PUBLIC_USE_MOCK, never a fallback.
+ *
+ * The app used to probe /health and quietly switch to sample data when the probe
+ * failed. In a compliance tool that is the worst possible failure mode: a
+ * sleeping backend produced invented figures that looked exactly like real ones.
+ * An unreachable API now surfaces as an error on the page that needed it.
+ */
+export const resolveApiMode = (): "remote" | "mock" => (USE_MOCK ? "mock" : "remote");
 
 export function createEthioBergApi(actor?: ActorRef, mode: "remote" | "mock" = "remote") {
-  if (mode === "mock" || !actor) {
+  if (mode === "mock") {
     return createMockApi(actor);
   }
   return createHttpApi(actor);
